@@ -16,7 +16,7 @@ export function ModernFooter() {
               </span>
             </div>
             <p className="text-gray-400 mb-6 max-w-md leading-relaxed">
-              Premium araç kiralama deneyimi. Lüks, konfor ve güvenliği bir arada sunan Türkiye'nin en prestijli araç
+              Premium araç kiralama deneyimi. Lüks, konfor ve güvenliği bir arada sunan               Türkiye&apos;nin en prestijli araç
               kiralama platformu.
             </p>
 

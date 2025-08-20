@@ -1,5 +1,6 @@
+import React from "react"
 import { Badge } from "@/components/ui/badge"
-import { Star, Shield, Award, Clock, Car, Users, CreditCard, Calendar } from "lucide-react"
+import { Star, Shield, Award, Clock,  Users, CreditCard } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Car as CarType } from "@/types/car"
 
@@ -13,7 +14,7 @@ export function CarDetail({ car }: CarDetailProps) {
     id: 1,
     name: "Lamborghini Huracán EVO",
     brand: "Lamborghini",
-    model: "Huracán EVO", 
+    model: "Huracán EVO",
     year: 2023,
     category: "Süper Spor",
     price: 8500000,
@@ -29,78 +30,17 @@ export function CarDetail({ car }: CarDetailProps) {
     min_license_years: 3,
     requires_credit_card: true,
     requires_deposit: true,
-    created_at: "2024-01-15T10:30:00Z"
+    created_at: "2024-01-15T10:30:00Z",
+    seating_capacity: "",
+    max_speed: "",
+    engine_power: ""
   }
 
   const currentCar = car || defaultCar
 
-  const getAvailabilityStatus = () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Bugünün başlangıcına ayarla
-    
-    // Gerçek car verisini kullan, yoksa defaultCar'ı kullan
-    const carData = car || currentCar
-    
-    let availableDate = null
-    if (carData.available_from) {
-      // String tarihini Date objesine çevir
-      availableDate = new Date(carData.available_from)
-      availableDate.setHours(0, 0, 0, 0) // Saati sıfırla, sadece tarihi karşılaştır
-    }
-    
-    // Eğer araç müsait değilse
-    if (carData.status !== "available") {
-      let message = "Müsait Değil"
-      if (carData.status === "busy") message = "Meşgul"
-      else if (carData.status === "maintenance") message = "Bakımda"
-      else if (carData.status === "reserved") message = "Rezerve Edilmiş"
-      
-      return {
-        available: false,
-        message,
-        color: "bg-red-500",
-        showDate: false,
-        availableDate: availableDate
-      }
-    }
-    
-    // Eğer müsaitlik tarihi yoksa, hemen müsait demektir
-    if (!availableDate) {
-      return {
-        available: true,
-        message: "Şimdi müsait",
-        color: "bg-green-500",
-        showDate: true,
-        availableDate: today
-      }
-    }
-    
-    // Müsaitlik tarihi bugünden sonrası ise
-    if (availableDate > today) {
-      const diffTime = availableDate.getTime() - today.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      
-      return {
-        available: false,
-        message: `${availableDate.toLocaleDateString('tr-TR')} tarihinden itibaren kiralayabilirsiniz`,
-        color: "bg-yellow-500",
-        availableDate,
-        showDate: true,
-        daysLeft: diffDays
-      }
-    }
-    
-    // Müsaitlik tarihi bugün veya geçmişte ise
-    return {
-      available: true,
-      message: "Şimdi müsait",
-      color: "bg-green-500",
-      showDate: true,
-      availableDate: availableDate
-    }
-  }
+  // Galeri görselleri ve seçili görsel state'i
 
-  const availabilityInfo = getAvailabilityStatus()
+  // const availabilityInfo = getAvailabilityStatus()
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("tr-TR", {

@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Lock, UserPlus, Settings, ShieldCheck, Wrench } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
+import { Lock, ShieldCheck, Wrench } from "lucide-react"
 import { toast } from "sonner"
 
 export default function AdminSettingsPage() {
@@ -18,7 +17,8 @@ export default function AdminSettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false)
 
   // Kullanıcı rolü değiştirme
-  const [users, setUsers] = useState<any[]>([])
+  type User = { id: string; name?: string; first_name?: string; last_name?: string; email: string; role: string };
+  const [users, setUsers] = useState<User[]>([])
   const [selectedUserId, setSelectedUserId] = useState("")
   const [roleLoading, setRoleLoading] = useState(false)
 
@@ -186,7 +186,9 @@ export default function AdminSettingsPage() {
                   {users.map(user => (
                     <SelectItem key={user.id} value={String(user.id)} disabled={user.role === "admin"}
                       className="text-white text-base px-4 py-2 hover:bg-orange-500/20 rounded-lg transition-all">
-                      {user.first_name} {user.last_name} ({user.email}) {user.role === "admin" ? "- Zaten admin" : ""}
+                      {(user.first_name || user.last_name)
+                        ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()
+                        : user.name} ({user.email}) {user.role === "admin" ? "- Zaten admin" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

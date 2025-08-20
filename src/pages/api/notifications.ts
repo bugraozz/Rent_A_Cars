@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         SELECT * FROM notifications 
         WHERE user_id = $1
       `
-      let queryParams = [user.id]
+      const queryParams = [user.id]
 
       if (unreadOnly === 'true') {
         query += ' AND is_read = FALSE'

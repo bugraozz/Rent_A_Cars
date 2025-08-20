@@ -118,9 +118,9 @@ export default function AdminDashboard() {
         <aside className="w-64 bg-gradient-to-b from-black via-[#0a0f2c] to-[#1c243b] text-white fixed h-full shadow-xl">
           <div className="p-6 text-2xl font-extrabold tracking-wide">Admin Panel</div>
           <nav className="flex flex-col space-y-2 px-4">
-            <a href="#" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Dashboard</a>
-            <a href="/admin/cars" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Araçlar</a>
-            <a href="/admin/user" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Kullanıcılar</a>
+              <Link href="#" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Dashboard</Link>
+              <Link href="/admin/cars" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Araçlar</Link>
+              <Link href="/admin/user" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Kullanıcılar</Link>
             <a href="/admin/bookings" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Rezervasyonlar</a>
             <a href="/admin/locations" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Lokasyonlar</a>
             <a href="/admin/messages" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">İletişim Mesajları</a>

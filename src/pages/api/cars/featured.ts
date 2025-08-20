@@ -1,6 +1,24 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import db from '@/lib/db'
 
+interface CarRow {
+  id: number;
+  brand: string;
+  model: string;
+  year: number;
+  features?: string | string[];
+  images?: string[];
+  reservation_count: string | number;
+  rating: string | number;
+  engine_power?: number;
+  max_speed?: number;
+  seating_capacity?: number;
+  category?: string;
+  status?: string;
+  daily_price?: number;
+  created_at?: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ 
@@ -44,14 +62,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔥 Featured cars query result:', result.rows.length)
 
     // Veriyi frontend'in beklediği formatta düzenle
-    const featuredCars = result.rows.map((car: any) => {
+    const featuredCars = result.rows.map((car: CarRow) => {
       return {
         ...car,
         name: `${car.brand} ${car.model} ${car.year}`,
         features: car.features ? (typeof car.features === 'string' ? JSON.parse(car.features) : car.features) : [],
         images: car.images || [],
-        reservation_count: parseInt(car.reservation_count) || 0,
-        rating: parseFloat(car.rating) || 4.5,
+        reservation_count: parseInt(car.reservation_count as string) || 0,
+        rating: parseFloat(car.rating as string) || 4.5,
         // Araç specs'ini oluştur
         engine_power: car.engine_power || Math.floor(Math.random() * 300) + 300, // 300-600 HP
         max_speed: car.max_speed || Math.floor(Math.random() * 100) + 250, // 250-350 km/h  

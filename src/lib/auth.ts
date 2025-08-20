@@ -32,7 +32,10 @@ export function createToken(payload: UserPayload | AdminPayload): string {
 export function verifyToken(token: string): UserPayload | AdminPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as UserPayload | AdminPayload
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Token verification failed:', error.message)
+    }
     return null
   }
 }
@@ -74,13 +77,19 @@ export function clearAuthCookie(res: NextApiResponse) {
 }
 
 // Request'ten token al
-export function getTokenFromRequest(req: any): string | null {
+interface RequestWithCookies {
+  headers: {
+    cookie?: string;
+  };
+}
+
+export function getTokenFromRequest(req: RequestWithCookies): string | null {
   const cookies = req.headers.cookie
   if (!cookies) return null
   
   const tokenCookie = cookies
     .split(';')
-    .find((c: string) => c.trim().startsWith(`${COOKIE_NAME}=`))
+    .find((c) => (c as string).trim().startsWith(`${COOKIE_NAME}=`))
   
   if (!tokenCookie) return null
   
@@ -88,7 +97,7 @@ export function getTokenFromRequest(req: any): string | null {
 }
 
 // Request'ten kullanıcı bilgisi al
-export function getUserFromRequest(req: any): UserPayload | AdminPayload | null {
+export function getUserFromRequest(req: RequestWithCookies): UserPayload | AdminPayload | null {
   const token = getTokenFromRequest(req)
   if (!token) return null
   

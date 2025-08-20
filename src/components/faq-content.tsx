@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ChevronUp, Car, CreditCard, Shield, Clock, MapPin, Phone } from "lucide-react"
+import { ChevronDown, ChevronUp, Car, CreditCard, Shield, MapPin, Phone } from "lucide-react"
 
 const faqData = [
   {

@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (user.role !== 'admin') {
       return res.status(403).json({ success: false, error: 'Admin access required' })
     }
-  } catch (authError) {
+  } catch {
     return res.status(401).json({ success: false, error: 'Authentication failed' })
   }
 
@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { search, onlyActive } = req.query
       let query = `SELECT * FROM locations WHERE 1=1`
-      const params: any[] = []
+  const params: (string | boolean)[] = []
       let pc = 0
 
       if (onlyActive === 'true') {

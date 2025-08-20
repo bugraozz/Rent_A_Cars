@@ -11,11 +11,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (user.role !== 'admin') {
       return res.status(403).json({ success: false, error: 'Admin access required' })
     }
-  } catch (authError) {
+  } catch {
     return res.status(401).json({ success: false, error: 'Authentication failed' })
   }
 
   const { id } = req.query
+
+  if (!id || Array.isArray(id)) {
+    return res.status(400).json({ success: false, error: 'Geçersiz id' })
+  }
 
   if (req.method === 'GET') {
     try {
@@ -35,8 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { name, address, city, phone, is_active } = req.body || {}
 
       // Build dynamic update
-      const fields: string[] = []
-      const values: any[] = []
+  const fields: string[] = []
+  const values: (string | boolean)[] = []
       let pc = 1
 
       if (name !== undefined) { fields.push(`name = $${pc++}`); values.push(name) }

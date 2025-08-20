@@ -22,8 +22,9 @@ export function LoginForm() {
     password: "",
     remember: false,
   })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const router = useRouter()
-  const { login, user } = useAuth()
+  const { login } = useAuth()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -213,7 +214,7 @@ export function LoginForm() {
               </div>
               <div>
                 <h3 className="font-semibold text-white mb-2">Özel İndirimler</h3>
-                <p className="text-gray-400">Üyelere özel %20'ye varan indirimler ve kampanyalar</p>
+                <p className="text-gray-400">Üyelere özel %20&#39;ye varan indirimler ve kampanyalar</p>
               </div>
             </div>
 

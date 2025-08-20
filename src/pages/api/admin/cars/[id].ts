@@ -57,18 +57,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         category,
         fuel_type,
         transmission,
-        engine_size,
-        horsepower,
-        seats,
-        doors,
         price,
         daily_price,
-        deposit_amount,
-        mileage,
         color,
-        license_plate,
         description,
-        features,
         images,
         status,
         available_from,
@@ -203,11 +195,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: false,
       message: "Method not allowed",
     })
-  } catch (error: any) {
-    console.error("API Error:", error)
+  } catch (error) {
+    console.error("API Error:", error instanceof Error ? error.message : error)
     return res.status(500).json({
       success: false,
-      message: "Internal server error: " + error.message,
+      message: "Internal server error: " + (error instanceof Error ? error.message : String(error)),
     })
   }
 }

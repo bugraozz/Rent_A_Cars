@@ -8,63 +8,55 @@ import { BookingForm } from "@/components/booking-form"
 import { toast } from "sonner"
 import type { Car } from "@/types/car"
 
+
 export default function BookingPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [car, setCar] = useState<Car | null>(null)
-  const [bookingData, setBookingData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [dataSource, setDataSource] = useState<'url' | 'localStorage' | null>(null)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [car, setCar] = useState<Car | null>(null);
+  const [bookingData, setBookingData] = useState<BookingData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [dataSource, setDataSource] = useState<'url' | 'localStorage' | null>(null);
 
   useEffect(() => {
     const loadBookingData = async () => {
       try {
-  let carId, startDate, endDate, pickupLocation, pickupLocationId, rentalDays, subtotal, tax, total
-
-        // Önce query params'tan veri almaya çalış
+        let carId, startDate, endDate, pickupLocation, pickupLocationId, rentalDays, subtotal, tax, total;
         if (searchParams) {
-          carId = searchParams.get('carId')
-          startDate = searchParams.get('startDate')
-          endDate = searchParams.get('endDate')
-          pickupLocation = searchParams.get('pickupLocation')
-          rentalDays = searchParams.get('rentalDays')
-          pickupLocationId = searchParams.get('pickupLocationId')
-          subtotal = searchParams.get('subtotal')
-          tax = searchParams.get('tax')
-          total = searchParams.get('total')
-          
+          carId = searchParams.get('carId');
+          startDate = searchParams.get('startDate');
+          endDate = searchParams.get('endDate');
+          pickupLocation = searchParams.get('pickupLocation');
+          rentalDays = searchParams.get('rentalDays');
+          pickupLocationId = searchParams.get('pickupLocationId');
+          subtotal = searchParams.get('subtotal');
+          tax = searchParams.get('tax');
+          total = searchParams.get('total');
           if (carId && startDate && endDate) {
-            setDataSource('url')
-            console.log('🔥 Data loaded from URL params')
+            setDataSource('url');
+            console.log('🔥 Data loaded from URL params');
           }
         }
-
-        // Eğer query params'ta veri yoksa localStorage'dan al
         if (!carId || !startDate || !endDate) {
-          console.log('Query params\'ta veri yok, localStorage\'dan kontrol ediliyor...')
-          
-          const savedBookingData = localStorage.getItem('pendingBooking')
+          console.log('Query params\'ta veri yok, localStorage\'dan kontrol ediliyor...');
+          const savedBookingData = localStorage.getItem('pendingBooking');
           if (savedBookingData) {
-            const parsed = JSON.parse(savedBookingData)
-            console.log('localStorage\'dan bulunan veri:', parsed)
-            
-            carId = parsed.carId?.toString()
-            startDate = parsed.startDate
-            endDate = parsed.endDate
-            pickupLocation = parsed.pickupLocation
-            pickupLocationId = parsed.pickupLocationId?.toString()
-            rentalDays = parsed.rentalDays?.toString()
-            subtotal = parsed.subtotal?.toString()
-            tax = parsed.tax?.toString()
-            total = parsed.total?.toString()
-            
-            setDataSource('localStorage')
-            console.log('🔥 Data loaded from localStorage')
-            toast.success('Önceki rezervasyon bilgileriniz yüklendi. Kaldığınız yerden devam edebilirsiniz.')
+            const parsed = JSON.parse(savedBookingData);
+            console.log('localStorage\'dan bulunan veri:', parsed);
+            carId = parsed.carId?.toString();
+            startDate = parsed.startDate;
+            endDate = parsed.endDate;
+            pickupLocation = parsed.pickupLocation;
+            pickupLocationId = parsed.pickupLocationId?.toString();
+            rentalDays = parsed.rentalDays?.toString();
+            subtotal = parsed.subtotal?.toString();
+            tax = parsed.tax?.toString();
+            total = parsed.total?.toString();
+            setDataSource('localStorage');
+            console.log('🔥 Data loaded from localStorage');
+            toast.success('Önceki rezervasyon bilgileriniz yüklendi. Kaldığınız yerden devam edebilirsiniz.');
           }
         } else if (carId && startDate && endDate) {
-          // URL'den veri aldıysak localStorage'ı güncelle
-          console.log('🔥 Updating localStorage with fresh URL data')
+          console.log('🔥 Updating localStorage with fresh URL data');
           const bookingData = {
             carId: parseInt(carId),
             startDate,
@@ -75,37 +67,29 @@ export default function BookingPage() {
             subtotal: parseFloat(subtotal || '0'),
             tax: parseFloat(tax || '0'),
             total: parseFloat(total || '0'),
-            timestamp: new Date().toISOString()
-          }
-          localStorage.setItem('pendingBooking', JSON.stringify(bookingData))
+            timestamp: new Date().toISOString(),
+          };
+          localStorage.setItem('pendingBooking', JSON.stringify(bookingData));
         }
-
-        // Hala veri yoksa ana sayfaya yönlendir
         if (!carId || !startDate || !endDate) {
-          toast.error('Rezervasyon bilgileri bulunamadı. Lütfen araç seçimi yapın.')
-          router.push('/cars')
-          return
+          toast.error('Rezervasyon bilgileri bulunamadı. Lütfen araç seçimi yapın.');
+          router.push('/cars');
+          setLoading(false);
+          return;
         }
-
-        // Araç bilgilerini fetch et
         const response = await fetch("/api/cars", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
-        })
-
+        });
         if (!response.ok) {
-          throw new Error("Araç verisi alınamadı")
+          throw new Error("Araç verisi alınamadı");
         }
-
-        const result = await response.json()
-        
+        const result = await response.json();
         if (result.success && result.data) {
-          const foundCar = result.data.find((c: any) => c.id === parseInt(carId))
-          
+          const foundCar = result.data.find((c: Car) => c.id === parseInt(carId));
           if (foundCar) {
-            // Complete car object with required fields
             const completeCar: Car = {
               ...foundCar,
               available_from: foundCar.available_from || new Date().toISOString(),
@@ -113,12 +97,9 @@ export default function BookingPage() {
               min_license_years: foundCar.min_license_years || 1,
               requires_credit_card: foundCar.requires_credit_card ?? true,
               requires_deposit: foundCar.requires_deposit ?? true,
-              created_at: foundCar.created_at || new Date().toISOString()
-            }
-            
-            setCar(completeCar)
-            
-            // Booking data'yı hazırla
+              created_at: foundCar.created_at || new Date().toISOString(),
+            };
+            setCar(completeCar);
             setBookingData({
               startDate,
               endDate,
@@ -127,24 +108,23 @@ export default function BookingPage() {
               rentalDays: parseInt(rentalDays || '0'),
               subtotal: parseFloat(subtotal || '0'),
               tax: parseFloat(tax || '0'),
-              total: parseFloat(total || '0')
-            })
+              total: parseFloat(total || '0'),
+            });
           } else {
-            toast.error("Araç bulunamadı")
-            router.push('/cars')
+            toast.error("Araç bulunamadı");
+            router.push('/cars');
           }
         }
       } catch (error) {
-        console.error("Booking data loading error:", error)
-        toast.error("Rezervasyon bilgileri yüklenemedi")
-        router.push('/cars')
+        console.error("Booking data loading error:", error);
+        toast.error("Rezervasyon bilgileri yüklenemedi");
+        router.push('/cars');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
-    loadBookingData()
-  }, [searchParams, router])
+    };
+    loadBookingData();
+  }, [searchParams, router]);
 
   if (loading) {
     return (
@@ -154,7 +134,7 @@ export default function BookingPage() {
           <div className="text-white text-lg">Rezervasyon bilgileri yükleniyor...</div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!car || !bookingData) {
@@ -163,7 +143,7 @@ export default function BookingPage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Rezervasyon bilgileri bulunamadı</h2>
           <p className="text-gray-400 mb-8">Lütfen araç sayfasından tekrar deneyin.</p>
-          <button 
+          <button
             onClick={() => router.push('/cars')}
             className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg"
           >
@@ -171,7 +151,7 @@ export default function BookingPage() {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -193,17 +173,31 @@ export default function BookingPage() {
               </div>
             )}
           </div>
-          
+
           {/* Booking Form with Pre-filled Data */}
           <BookingFormWithData car={car} bookingData={bookingData} />
         </div>
       </div>
       <ModernFooter />
     </div>
-  )
+  );
 }
 
+
+
 // BookingForm wrapper with pre-filled data
-function BookingFormWithData({ car, bookingData }: { car: Car, bookingData: any }) {
-  return <BookingForm car={car} initialData={bookingData} />
+
+type BookingData = {
+  startDate: string;
+  endDate: string;
+  pickupLocation?: string;
+  pickupLocationId?: number;
+  rentalDays: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+};
+
+function BookingFormWithData({ car, bookingData }: { car: Car; bookingData: BookingData }) {
+  return <BookingForm car={car} initialData={bookingData} />;
 }

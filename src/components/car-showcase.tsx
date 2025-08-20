@@ -1,5 +1,7 @@
-"use client"
+// Type for featured car with extra fields
 
+"use client"
+type FeaturedCar = Partial<Car> & { featured?: boolean; specs?: string[] };
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -38,8 +40,8 @@ export function CarShowcase() {
         
         if (carsResult.success && carsResult.data) {
           // İlk 3 araçı featured olarak göster
-          const topCars = carsResult.data.slice(0, 3).map((car: any, index: number) => ({
-            ...car,
+    const topCars = carsResult.data.slice(0, 3).map((car: Partial<Car>, index: number) => ({
+      ...car,
             featured: index === 0, // İlk araç featured
             specs: [
               `${car.engine_power || '400'} HP`,
@@ -56,7 +58,7 @@ export function CarShowcase() {
       console.log("🔥 Featured cars API response:", result)
       
       if (result.success && result.data) {
-        const processedCars = result.data.map((car: any, index: number) => ({
+        const processedCars = result.data.map((car: Partial<Car>, index: number) => ({
           ...car,
           featured: index === 0, // İlk araç featured
           name: car.name || `${car.brand} ${car.model} ${car.year}`,
@@ -66,17 +68,17 @@ export function CarShowcase() {
             `${car.seating_capacity || '4'} Kişi`
           ],
           images: car.images && Array.isArray(car.images) 
-            ? car.images.map((img: any) => {
-                if (typeof img === 'string') return img
-                if (img && img.url) return img.url
-                if (img && img.image_url) return img.image_url
-                return img
+            ? car.images.map((img: string | { url?: string; image_url?: string }) => {
+                if (typeof img === 'string') return img;
+                if (img && typeof img === 'object' && 'url' in img && img.url) return img.url;
+                if (img && typeof img === 'object' && 'image_url' in img && img.image_url) return img.image_url;
+                return '';
               }).filter(Boolean)
             : [],
         }))
         setFeaturedCars(processedCars)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("🔥 Öne çıkan araçlar yüklenirken hata:", error)
       // Hata durumunda fallback olarak normal cars API'sini dene
       try {
@@ -84,7 +86,7 @@ export function CarShowcase() {
         const carsResult = await carsResponse.json()
         
         if (carsResult.success && carsResult.data) {
-          const topCars = carsResult.data.slice(0, 3).map((car: any, index: number) => ({
+          const topCars = carsResult.data.slice(0, 3).map((car: Partial<Car>, index: number) => ({
             ...car,
             featured: index === 0,
             name: car.name || `${car.brand} ${car.model} ${car.year}`,
@@ -152,12 +154,30 @@ export function CarShowcase() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {featuredCars.map((car: any, index: number) => {
-              const mainImage = car.images && car.images.length > 0 ? car.images[0] : "/car-animated.gif"
-              
+
+            {(featuredCars as FeaturedCar[]).map((car, index) => {
+              const isValidImage = (src: unknown) => {
+                if (typeof src !== "string" || !src) return false;
+                const allowed = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+                return allowed.some(ext => src.toLowerCase().endsWith(ext));
+              };
+              const validImages = Array.isArray(car.images)
+                ? car.images.filter(isValidImage)
+                : [];
+              const mainImage = validImages.length > 0 ? validImages[0] : "/car-animated.gif";
+
+              // Fallbacks for possibly undefined properties
+              const name = car.name ?? "";
+              const featured = car.featured ?? false;
+              const specs = car.specs ?? [];
+              const dailyPrice = car.daily_price ?? 0;
+              const category = car.category ?? "";
+              const rating = car.rating ?? 4.5;
+              const id = car.id ?? index;
+
               return (
                 <Card
-                  key={car.id}
+                  key={id}
                   className={`bg-gray-800/50 border-gray-700 overflow-hidden hover:bg-gray-800/70 transition-all duration-500 group ${
                     index === 0 ? "lg:col-span-2 lg:row-span-2" : ""
                   }`}
@@ -165,7 +185,7 @@ export function CarShowcase() {
                   <div className="relative overflow-hidden">
                     <Image
                       src={mainImage}
-                      alt={car.name}
+                      alt={name}
                       width={600}
                       height={400}
                       className={`w-full object-cover group-hover:scale-110 transition-transform duration-700 ${
@@ -174,7 +194,7 @@ export function CarShowcase() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
-                    {car.featured && (
+                    {featured && (
                       <Badge className="absolute top-4 left-4 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
                         En Popüler
                       </Badge>
@@ -183,7 +203,7 @@ export function CarShowcase() {
                     <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-full p-2">
                       <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
-                        <span className="text-white text-sm font-medium">{car.rating || 4.5}</span>
+                        <span className="text-white text-sm font-medium">{rating}</span>
                       </div>
                     </div>
                   </div>
@@ -192,16 +212,16 @@ export function CarShowcase() {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className={`font-bold text-white mb-2 ${index === 0 ? "text-2xl" : "text-xl"}`}>
-                          {car.name}
+                          {name}
                         </h3>
                         <Badge variant="outline" className="border-orange-500 text-orange-500">
-                          {car.category}
+                          {category}
                         </Badge>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4 mb-6">
-                      {car.specs && car.specs.map((spec: string, specIndex: number) => (
+                      {specs && specs.map((spec: string, specIndex: number) => (
                         <div key={specIndex} className="text-center">
                           <div className="flex justify-center mb-2">
                             {specIndex === 0 && <Zap className="h-5 w-5 text-orange-500" />}
@@ -215,10 +235,10 @@ export function CarShowcase() {
 
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="text-3xl font-bold text-orange-500">₺{formatPrice(car.daily_price)}</span>
+                        <span className="text-3xl font-bold text-orange-500">₺{formatPrice(dailyPrice)}</span>
                         <span className="text-gray-400 ml-1">/gün</span>
                       </div>
-                      <Link href={`/cars/${car.id}`}>
+                      <Link href={`/cars/${id}`}>
                         <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0">
                           Rezerve Et
                         </Button>
@@ -226,7 +246,7 @@ export function CarShowcase() {
                     </div>
                   </CardContent>
                 </Card>
-              )
+              );
             })}
           </div>
         )}

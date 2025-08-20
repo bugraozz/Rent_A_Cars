@@ -131,7 +131,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [user.id]
       )
 
-      const reviews = result.rows.map((review: any) => ({
+      interface DbReview {
+        id: number;
+        rating: number;
+        comment: string;
+        created_at: string;
+        brand: string;
+        model: string;
+        year: number;
+        start_date: string;
+        end_date: string;
+        reservation_status: string;
+      }
+
+      const reviews = result.rows.map((review: DbReview) => ({
         ...review,
         car_name: `${review.brand} ${review.model} ${review.year}`,
         rental_period: `${new Date(review.start_date).toLocaleDateString('tr-TR')} - ${new Date(review.end_date).toLocaleDateString('tr-TR')}`

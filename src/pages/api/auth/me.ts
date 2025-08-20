@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getUserFromRequest } from '@/lib/auth'
+import { getUserFromRequest, UserPayload, AdminPayload } from '@/lib/auth'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -20,11 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: user.id,
         email: user.email,
         role: user.role,
-        ...(user.role === 'admin' 
-          ? { username: (user as any).username }
-          : { 
-              first_name: (user as any).first_name, 
-              last_name: (user as any).last_name 
+        ...(user.role === 'admin'
+          ? { username: (user as AdminPayload).username }
+          : {
+              first_name: (user as UserPayload).first_name,
+              last_name: (user as UserPayload).last_name
             }
         ),
       },

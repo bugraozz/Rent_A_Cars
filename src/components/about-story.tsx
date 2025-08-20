@@ -14,7 +14,7 @@ export function AboutStory() {
             <h2 className="text-4xl font-bold text-white mb-6">Lüks Araç Kiralama Sektöründe 15 Yıllık Deneyim</h2>
             <div className="space-y-6 text-gray-300 leading-relaxed">
               <p>
-                2009 yılında kurulan DRIVE, Türkiye'nin en prestijli araç kiralama şirketi olma vizyonuyla yola çıktı.
+                2009 yılında kurulan DRIVE, Türkiye&#39;nin en prestijli araç kiralama şirketi olma vizyonuyla yola çıktı.
                 İlk günden itibaren müşteri memnuniyetini ön planda tutarak, sektörde fark yaratan hizmetler sunmaya
                 odaklandık.
               </p>
@@ -24,7 +24,7 @@ export function AboutStory() {
                 standartlarda tutulmaktadır.
               </p>
               <p>
-                Lamborghini'den Ferrari'ye, BMW'den Mercedes'e kadar dünyanın en prestijli markalarının en yeni
+                Lamborghini&rsquo;den Ferrari&rsquo;ye, BMW&rsquo;den Mercedes&rsquo;e kadar dünyanın en prestijli markalarının en yeni
                 modellerini filomuzda bulabilirsiniz.
               </p>
             </div>

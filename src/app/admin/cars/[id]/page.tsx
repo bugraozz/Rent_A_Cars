@@ -1,10 +1,12 @@
 "use client"
 
+import React from "react"
 import { Car } from "@/types/car"
 import { useState, useEffect, use } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Edit, Trash2, Calendar, Fuel, Settings, Palette } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -27,11 +29,7 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
   const searchParams = useSearchParams()
   const isEditMode = searchParams?.get("mode") === "edit"
 
-  useEffect(() => {
-    fetchCar()
-  }, [resolvedParams.id])
-
-  const fetchCar = async () => {
+  const fetchCar = React.useCallback(async () => {
     setLoading(true)
     try {
       console.log(`API çağrısı yapılıyor: /api/admin/cars/${resolvedParams.id}`)
@@ -57,15 +55,15 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
         
         // Images array'ini düzelt
         if (carData.images && Array.isArray(carData.images)) {
-          carData.images = carData.images.map((img: any) => {
+          carData.images = carData.images.map((img: string | { url?: string; image_url?: string }) => {
             if (typeof img === 'string') {
               return img
-            } else if (img && img.url) {
+            } else if (img && typeof img === 'object' && 'url' in img && img.url) {
               return img.url
-            } else if (img && img.image_url) {
+            } else if (img && typeof img === 'object' && 'image_url' in img && img.image_url) {
               return img.image_url
             }
-            return img
+            return ''
           }).filter(Boolean)
         } else {
           carData.images = []
@@ -77,13 +75,21 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
         console.error("API'den geçersiz veri:", result)
         throw new Error("Geçersiz API yanıtı")
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Araç bilgileri yüklenirken hata:", error)
-      toast.error(`Araç bilgileri yüklenemedi: ${error.message}`)
+      if (error instanceof Error) {
+        toast.error(`Araç bilgileri yüklenemedi: ${error.message}`)
+      } else {
+        toast.error("Araç bilgileri yüklenemedi.")
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [resolvedParams.id])
+
+  useEffect(() => {
+    fetchCar()
+  }, [fetchCar])
 
   const handleSave = async (carData: Partial<Car>) => {
     try {
@@ -115,9 +121,13 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
       } else {
         throw new Error(result.message || "Güncelleme başarısız")
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Güncelleme hatası:", error)
-      toast.error(error.message || "Araç güncellenirken hata oluştu")
+      if (error instanceof Error) {
+        toast.error(error.message || "Araç güncellenirken hata oluştu")
+      } else {
+        toast.error("Araç güncellenirken hata oluştu")
+      }
     }
   }
 
@@ -140,9 +150,13 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
         } else {
           throw new Error(result.message || "Silme işlemi başarısız")
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error("Silme hatası:", error)
-        toast.error(error.message || "Araç silinirken hata oluştu")
+        if (error instanceof Error) {
+          toast.error(error.message || "Araç silinirken hata oluştu")
+        } else {
+          toast.error("Araç silinirken hata oluştu")
+        }
       }
     }
   }
@@ -248,10 +262,12 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
             <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
               <CardContent className="p-0">
                 <div className="relative">
-                  <img
+                  <Image
                     src={car.images[currentImageIndex] || "/placeholder.svg?height=400&width=600"}
                     alt={`${car.name} - Resim ${currentImageIndex + 1}`}
                     className="w-full h-96 object-cover rounded-lg"
+                    width={600}
+                    height={400}
                   />
                   {car.images.length > 1 && (
                     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
@@ -282,10 +298,12 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
                       index === currentImageIndex ? "border-blue-500" : "border-transparent"
                     }`}
                   >
-                    <img
+                    <Image
                       src={image || "/placeholder.svg"}
                       alt={`Thumbnail ${index + 1}`}
                       className="w-full h-full object-cover"
+                      width={100}
+                      height={100}
                     />
                   </button>
                 ))}

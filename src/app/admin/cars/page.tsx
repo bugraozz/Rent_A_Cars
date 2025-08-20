@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import Image from "next/image"
 
 interface Car {
   id: number
@@ -45,32 +46,29 @@ export default function CarsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
 
   const fetchCars = async () => {
-    setLoading(true)
     try {
+      setLoading(true);
       const response = await fetch("/api/admin/cars", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-      })
-
+      });
       if (!response.ok) {
-        throw new Error("Araçlar yüklenemedi")
+        throw new Error("Araçlar yüklenemedi");
       }
-
-      const result = await response.json()
-      
+      const result = await response.json();
       if (result.success && result.data) {
-        setCars(result.data)
-        console.log("Araçlar yüklendi:", result.data)
+        setCars(result.data);
+        console.log("Araçlar yüklendi:", result.data);
       } else {
-        throw new Error("Veri formatı hatalı")
+        throw new Error("Veri formatı hatalı");
       }
     } catch (error) {
-      console.error("Araç yükleme hatası:", error)
-      toast.error("Araçlar yüklenemedi")
+      console.error("Araç yükleme hatası:", error);
+      toast.error("Araçlar yüklenemedi");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -326,15 +324,25 @@ export default function CarsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCars.map((car) => {
             const statusInfo = getStatusBadge(car.status, car.available_from)
+            // Görsel yolu normalize: uploads ile başlıyorsa başına / ekle
+            let mainImage = car.images?.[0] || "/placeholder.svg?height=200&width=400";
+            if (typeof mainImage === "string" && mainImage.startsWith("uploads/")) {
+              mainImage = "/" + mainImage;
+            }
+            // Next.js Image için width/height zorunlu
+            const imageWidth = 400;
+            const imageHeight = 200;
             return (
               <Card
                 key={car.id}
                 className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 group"
               >
                 <div className="relative">
-                  <img
-                    src={car.images?.[0] || "/placeholder.svg?height=200&width=400"}
+                  <Image
+                    src={mainImage}
                     alt={car.name}
+                    width={imageWidth}
+                    height={imageHeight}
                     className="w-full h-48 object-cover rounded-t-lg"
                   />
                   <div className="absolute top-3 right-3">

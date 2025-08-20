@@ -3,23 +3,7 @@
 import { useRouter } from "next/navigation"
 import CarForm from "@/components/car-form"
 import { toast } from "sonner"
-
-interface Car {
-  id: number
-  name: string
-  brand: string
-  model: string
-  year: number
-  category: string
-  price: number
-  fuel_type: string
-  transmission: string
-  color: string
-  images: string[]
-  description: string
-  status: "available" | "sold" | "maintenance"
-  created_at?: string
-}
+import type { Car } from "@/types/car"
 
 export default function NewCarPage() {
   const router = useRouter()

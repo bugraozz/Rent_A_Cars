@@ -7,10 +7,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { carId, startDate, endDate } = req.query
 
-    if (!carId) {
-      return res.status(400).json({ error: 'Car ID gerekli' })
+
+    const carIdRaw = req.query.carId;
+    const startDateRaw = req.query.startDate;
+    const endDateRaw = req.query.endDate;
+
+    if (!carIdRaw || Array.isArray(carIdRaw)) {
+      return res.status(400).json({ error: 'Geçersiz carId' })
+    }
+    const carId = carIdRaw as string;
+
+    let startDate: string | undefined = undefined;
+    let endDate: string | undefined = undefined;
+    if (startDateRaw) {
+      if (Array.isArray(startDateRaw)) {
+        return res.status(400).json({ error: 'Geçersiz startDate' })
+      }
+      startDate = startDateRaw;
+    }
+    if (endDateRaw) {
+      if (Array.isArray(endDateRaw)) {
+        return res.status(400).json({ error: 'Geçersiz endDate' })
+      }
+      endDate = endDateRaw;
     }
 
     // Eğer tarih aralığı verilmişse, o tarihlerde müsaitlik kontrolü yap
@@ -27,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         )
       `
       
-      const conflictResult = await db.query(conflictQuery, [carId, startDate, endDate])
+  const conflictResult = await db.query(conflictQuery, [carId, startDate, endDate])
       const isAvailable = parseInt(conflictResult.rows[0].conflict_count) === 0
 
       return res.status(200).json({
@@ -50,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ORDER BY start_date ASC
     `
     
-    const reservations = await db.query(reservationsQuery, [carId])
+  const reservations = await db.query(reservationsQuery, [carId])
 
     // Araç bilgisini de getir
     const carQuery = `
@@ -59,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE id = $1
     `
     
-    const carResult = await db.query(carQuery, [carId])
+  const carResult = await db.query(carQuery, [carId])
     
     if (carResult.rows.length === 0) {
       return res.status(404).json({ error: 'Araç bulunamadı' })

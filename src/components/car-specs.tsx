@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, Gauge, Users, Fuel, Settings, Calendar, Car as CarIcon, Palette } from "lucide-react"
+import { Zap, Gauge,  Fuel, Settings, Calendar, Car as CarIcon, Palette } from "lucide-react"
 import type { Car } from "@/types/car"
 
 interface CarSpecsProps {

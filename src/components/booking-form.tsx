@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { User, Mail, Phone, CreditCard, Shield, Calendar, MapPin, AlertCircle, Check } from "lucide-react"
+import { User, Mail, Phone, CreditCard, Shield, Calendar, AlertCircle, Check } from "lucide-react"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import type { Car } from "@/types/car"
 import type { Location } from "@/types/location"
@@ -59,7 +59,7 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
   const [cardHolder, setCardHolder] = useState('')
   
   const [unavailableDates, setUnavailableDates] = useState<UnavailableDate[]>([])
-  const [loading, setLoading] = useState(false)
+  // removed unused loading state
   const [bookingLoading, setBookingLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -72,57 +72,87 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
   const [tax, setTax] = useState(initialData?.tax || 0)
   const [total, setTotal] = useState(initialData?.total || 0)
 
+  // --- useCallback hooks must be declared before useEffect hooks that use them ---
+  const checkDateAvailability = useCallback(async () => {
+    if (!startDate || !endDate || !car?.id) return
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    if (start >= end) {
+      setAvailabilityMessage('Dönüş tarihi alış tarihinden sonra olmalıdır')
+      setIsDateRangeValid(false)
+      return
+    }
+    if (start < new Date()) {
+      setAvailabilityMessage('Alış tarihi bugünden önce olamaz')
+      setIsDateRangeValid(false)
+      return
+    }
+    try {
+      const response = await fetch(
+        `/api/cars/${car.id}/availability?startDate=${startDate}&endDate=${endDate}`
+      )
+      if (response.ok) {
+        const data = await response.json()
+        if (data.available) {
+          setAvailabilityMessage('Seçilen tarihler müsait ✓')
+          setIsDateRangeValid(true)
+        } else {
+          setAvailabilityMessage('Seçilen tarihler müsait değil')
+          setIsDateRangeValid(false)
+        }
+      }
+    } catch (error) {
+      console.error('Müsaitlik kontrolü hatası:', error)
+      setAvailabilityMessage('Müsaitlik kontrolü yapılamadı')
+      setIsDateRangeValid(false)
+    }
+  }, [startDate, endDate, car?.id])
+
+  const calculatePricing = useCallback(() => {
+    if (!startDate || !endDate || !car?.daily_price) return
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    const subtotalAmount = days * car.daily_price
+    const taxAmount = subtotalAmount * 0.18 // 18% KDV
+    const totalAmount = subtotalAmount + taxAmount
+    setRentalDays(days)
+    setSubtotal(subtotalAmount)
+    setTax(taxAmount)
+    setTotal(totalAmount)
+  }, [startDate, endDate, car?.daily_price])
+
+
   // Kullanıcı bilgilerini yükle
   useEffect(() => {
     if (user) {
       console.log('🔥 Loading user data:', user)
-      
-      // Email'i yükle
       setEmail(user.email || '')
-      
-      // Telefon numarasını yükle (varsa)
-      if (user.phone) {
-        setPhone(user.phone)
-      }
-      
-      // İsim ve soyisim varsa onları kullan
-      if (user.first_name) {
-        setFirstName(user.first_name)
-      }
-      if (user.last_name) {
-        setLastName(user.last_name)
-      }
-      
-      // Kart sahibi adını oluştur
+      if (user.phone) setPhone(user.phone)
+      if (user.first_name) setFirstName(user.first_name)
+      if (user.last_name) setLastName(user.last_name)
       const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ')
       if (fullName) {
         setCardHolder(fullName)
       } else if (user.email) {
-        // Email'den ad çıkarmaya çalış
         const emailParts = user.email.split('@')[0].split('.')
         if (emailParts.length >= 2) {
-          const firstName = emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1)
-          const lastName = emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1)
-          setFirstName(firstName)
-          setLastName(lastName)
-          setCardHolder(`${firstName} ${lastName}`)
+          const firstNameFromEmail = emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1)
+          const lastNameFromEmail = emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1)
+          setFirstName(firstNameFromEmail)
+          setLastName(lastNameFromEmail)
+          setCardHolder(`${firstNameFromEmail} ${lastNameFromEmail}`)
         } else {
-          // Email'in @ öncesi kısmını kullan
           const name = user.email.split('@')[0]
           const formattedName = name.charAt(0).toUpperCase() + name.slice(1)
           setFirstName(formattedName)
           setCardHolder(formattedName)
         }
       }
-      
-      // Daha önceki kullanıcı bilgilerini localStorage'dan yükle
       const savedUserData = localStorage.getItem(`userData_${user.id}`)
       if (savedUserData) {
         try {
           const parsed = JSON.parse(savedUserData)
-          console.log('🔥 Loading saved user data from localStorage:', parsed)
-          
-          // Daha önce kaydedilen bilgileri kullan (eğer henüz dolu değilse)
           if (!firstName && parsed.firstName) setFirstName(parsed.firstName)
           if (!lastName && parsed.lastName) setLastName(parsed.lastName)
           if (!phone && parsed.phone) setPhone(parsed.phone)
@@ -131,7 +161,6 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
           console.error('Error parsing saved user data:', error)
         }
       }
-      
       console.log('🔥 User data loaded:', {
         firstName: user.first_name || 'from email',
         lastName: user.last_name || 'from email',
@@ -140,14 +169,13 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
         cardHolder: fullName || 'from email'
       })
     }
-  }, [user])
+  }, [user, cardHolder, firstName, lastName, phone])
 
   // Araç müsaitlik bilgilerini yükle
   useEffect(() => {
     const fetchAvailability = async () => {
       if (!car?.id) return
       
-      setLoading(true)
       try {
         const response = await fetch(`/api/cars/${car.id}/availability`)
         if (response.ok) {
@@ -156,8 +184,6 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
         }
       } catch (error) {
         console.error('Müsaitlik kontrolü hatası:', error)
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -172,7 +198,6 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
         const json = await res.json()
         if (json.success) {
           setLocations(json.data)
-          // If initialData carries selection, prioritize it
           if (initialData?.pickupLocationId) {
             const found = json.data.find((l: Location) => l.id === Number(initialData.pickupLocationId))
             if (found) {
@@ -192,7 +217,7 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
       }
     }
     load()
-  }, [car?.location_id])
+  }, [car?.location_id, initialData?.pickupLocationId, pickupLocation])
 
   // Tarih değişikliklerini izle ve müsaitlik kontrolü yap
   useEffect(() => {
@@ -200,7 +225,7 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
       checkDateAvailability()
       calculatePricing()
     }
-  }, [startDate, endDate])
+  }, [startDate, endDate, checkDateAvailability, calculatePricing])
 
   // Initial data geldiğinde availability check yap
   useEffect(() => {
@@ -211,7 +236,7 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
       setAvailabilityMessage('Seçilen tarihler müsait ✓')
       checkDateAvailability()
     }
-  }, [initialData])
+  }, [initialData, checkDateAvailability, startDate, endDate])
 
   // Form validation check - Sadece basic validation
   useEffect(() => {
@@ -253,77 +278,13 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
         cardHolder,
         lastUpdated: new Date().toISOString()
       }
-      
       localStorage.setItem(`userData_${user.id}`, JSON.stringify(userData))
       console.log('🔥 User data saved to localStorage:', userData)
     }
   }, [firstName, lastName, phone, cardHolder, user])
 
-  const checkDateAvailability = async () => {
-    if (!startDate || !endDate || !car?.id) return
 
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    
-    if (start >= end) {
-      setAvailabilityMessage('Dönüş tarihi alış tarihinden sonra olmalıdır')
-      setIsDateRangeValid(false)
-      return
-    }
 
-    if (start < new Date()) {
-      setAvailabilityMessage('Alış tarihi bugünden önce olamaz')
-      setIsDateRangeValid(false)
-      return
-    }
-
-    try {
-      const response = await fetch(
-        `/api/cars/${car.id}/availability?startDate=${startDate}&endDate=${endDate}`
-      )
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.available) {
-          setAvailabilityMessage('Seçilen tarihler müsait ✓')
-          setIsDateRangeValid(true)
-        } else {
-          setAvailabilityMessage('Seçilen tarihler müsait değil')
-          setIsDateRangeValid(false)
-        }
-      }
-    } catch (error) {
-      console.error('Müsaitlik kontrolü hatası:', error)
-      setAvailabilityMessage('Müsaitlik kontrolü yapılamadı')
-      setIsDateRangeValid(false)
-    }
-  }
-
-  const calculatePricing = () => {
-    if (!startDate || !endDate || !car?.daily_price) return
-
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-    
-    const subtotalAmount = days * car.daily_price
-    const taxAmount = subtotalAmount * 0.18 // 18% KDV
-    const totalAmount = subtotalAmount + taxAmount
-
-    setRentalDays(days)
-    setSubtotal(subtotalAmount)
-    setTax(taxAmount)
-    setTotal(totalAmount)
-  }
-
-  const isDateUnavailable = (dateString: string) => {
-    const checkDate = new Date(dateString)
-    return unavailableDates.some(({ start, end }) => {
-      const startDate = new Date(start)
-      const endDate = new Date(end)
-      return checkDate >= startDate && checkDate <= endDate
-    })
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -355,7 +316,7 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
         setError(`Araç bu tarihler için müsait değil: ${availabilityData.reason || 'Bilinmeyen sebep'}`)
         return
       }
-    } catch (error) {
+    } catch {
       setError('Müsaitlik kontrolü sırasında hata oluştu')
       return
     }
@@ -448,6 +409,8 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
       setBookingLoading(false)
     }
   }
+  // Remove unused variable isDateUnavailable
+
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-12">
       {/* Booking Form */}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Heart, Share2, Star, Zap, Gauge, Users, Eye, Loader2 } from "lucide-react"
+import {  Star, Zap, Gauge, Users, Eye, Loader2 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -22,19 +22,27 @@ interface CarListingProps {
 }
 
 export function CarListing({ filters }: CarListingProps) {
+  // DEBUG: fetchCars otomatik çağrılıyor mu?
+  useEffect(() => {
+    console.log("[DEBUG] useEffect: fetchCars çağrılıyor!");
+    fetchCars();
+    // fetchCars fonksiyonu stable değilse, dependency array'den kaldırmak için aşağıdaki satırı kullanabilirsiniz:
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState<string>("")
 
-  // Cars state değişikliklerini izle
+  // Cars ve filteredCars state değişikliklerini izle
   useEffect(() => {
     console.log("🔥 Cars state değişti:", { length: cars.length, cars })
-  }, [cars])
+    console.log("🔥 Aktif filtreler:", filters)
+    console.log("🔥 filteredCars state:", { length: filteredCars.length, filteredCars })
+    // filteredCars fonksiyonu stable değilse, dependency array'den kaldırmak için aşağıdaki satırı kullanabilirsiniz:
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cars, filters]);
 
-  useEffect(() => {
-    fetchCars()
-  }, [filters]) // Filtreler değiştiğinde yeniden yükle
-
+  // fetchCars fonksiyonunu useCallback ile sarmala
   const fetchCars = async () => {
     try {
       setLoading(true)
@@ -83,7 +91,7 @@ export function CarListing({ filters }: CarListingProps) {
         console.log("🔥 Ham araç verisi:", result.data)
         
         // API'den gelen veriyi uygun formata çevir
-        const carsData = result.data.map((car: any) => {
+        const carsData = result.data.map((car: Car) => {
           console.log("🔥 İşlenen araç verisi:", {
             id: car.id,
             name: car.name,
@@ -92,17 +100,20 @@ export function CarListing({ filters }: CarListingProps) {
             available_from_type: typeof car.available_from
           })
           
+          let imagesArr: string[] = [];
+          if (typeof car.images === 'string' && (car.images as string).length > 0) {
+            imagesArr = [car.images as string];
+          } else if (Array.isArray(car.images)) {
+            imagesArr = car.images.map((img: string | { url?: string; image_url?: string }) => {
+              if (typeof img === 'string') return img;
+              if (img && img.url) return img.url;
+              if (img && img.image_url) return img.image_url;
+              return '';
+            }).filter(Boolean);
+          }
           return {
             ...car,
-            // Images array'ini düzelt
-            images: car.images && Array.isArray(car.images) 
-              ? car.images.map((img: any) => {
-                  if (typeof img === 'string') return img
-                  if (img && img.url) return img.url
-                  if (img && img.image_url) return img.image_url
-                  return img
-                }).filter(Boolean)
-              : [],
+            images: imagesArr,
           }
         })
         
@@ -113,11 +124,14 @@ export function CarListing({ filters }: CarListingProps) {
         console.log("🔥 API başarısız veya data yok:", { success: result.success, hasData: !!result.data })
         throw new Error("Geçersiz API yanıtı")
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("🔥 Araç listesi yüklenirken hata:", error)
-      console.error("🔥 Hata detayı:", error.message)
-      console.error("🔥 Hata stack:", error.stack)
-      toast.error(`Araç listesi yüklenemedi: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
+      console.error("🔥 Hata detayı:", errorMessage)
+      if (error instanceof Error) {
+        console.error("🔥 Hata stack:", error.stack)
+      }
+      toast.error(`Araç listesi yüklenemedi: ${errorMessage}`)
     } finally {
       console.log("🔥 Loading false yapılıyor")
       setLoading(false)
@@ -126,15 +140,25 @@ export function CarListing({ filters }: CarListingProps) {
 
   // Filtrelenmiş araçları hesapla
   const filteredCars = cars.filter(car => {
+    // Log: Tüm filtreler ve araç
+    console.log('[FILTRE] Araç kontrol ediliyor:', car)
+    console.log('[FILTRE] Aktif filtreler:', filters)
+    // Eğer hiç filtre yoksa, tüm araçları göster
+    if (!filters || Object.keys(filters).length === 0) {
+      console.log('[FILTRE] Filtre yok, araç gösteriliyor:', car)
+      return true;
+    }
     // Lokasyon filtresi
     if (filters?.locationIds && filters.locationIds.length > 0) {
       if (!car.location_id || !filters.locationIds.includes(Number(car.location_id))) {
+        console.log('[FILTRE] Araç elendi (lokasyon):', car)
         return false
       }
     }
     // Kategori filtresi
     if (filters?.category && filters.category !== 'all') {
       if (car.category?.toLowerCase() !== filters.category.toLowerCase()) {
+        console.log('[FILTRE] Araç elendi (kategori):', car)
         return false
       }
     }
@@ -145,18 +169,18 @@ export function CarListing({ filters }: CarListingProps) {
       if (car.status === 'reserved' && car.available_from) {
         const availableDate = new Date(car.available_from)
         const filterStartDate = new Date(filters.startDate)
-        
         if (availableDate > filterStartDate) {
+          console.log('[FILTRE] Araç elendi (tarih - reserved):', car)
           return false
         }
       }
-      
       // Bakımda veya meşgul araçları gösterme
       if (car.status === 'maintenance' || car.status === 'busy') {
+        console.log('[FILTRE] Araç elendi (bakımda/meşgul):', car)
         return false
       }
     }
-
+    console.log('[FILTRE] Araç gösterilecek:', car)
     return true
   })
 
@@ -293,8 +317,40 @@ export function CarListing({ filters }: CarListingProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 ">
           {filteredCars.map((car) => {
             const statusInfo = getStatusBadge(car.status, car.available_from)
-            const mainImage = car.images && car.images.length > 0 ? car.images[0] : "/car-animated.gif"
-            
+            // isValidImage kullanılmıyor, kaldırıldı
+            // validImages kullanılmıyor, kaldırıldı
+            // Detay sayfasındaki gibi: images array ise ilk eleman, string ise direkt kullan
+            let mainImage = "/car-animated.gif";
+            if (Array.isArray(car.images) && car.images.length > 0) {
+              const img = car.images[0] as unknown;
+              if (typeof img === "string") {
+                mainImage = img;
+              } else if (img && typeof img === 'object' && 'url' in img && typeof (img as { url?: string }).url === "string") {
+                mainImage = (img as { url?: string }).url as string;
+              } else if (img && typeof img === 'object' && 'image_url' in img && typeof (img as { image_url?: string }).image_url === "string") {
+                mainImage = (img as { image_url?: string }).image_url as string;
+              }
+            } else if (typeof car.images === "string" && (car.images as string).length > 0) {
+              mainImage = car.images as string;
+            }
+            // Geçerli uzantı değilse fallback
+            // uploads ile başlıyorsa başına / ekle
+            if (typeof mainImage === "string" && mainImage.startsWith("uploads/")) {
+              mainImage = "/" + mainImage;
+            }
+            // Uzantı kontrolü kaldırıldı, sadece boş veya null ise fallback
+            if (!mainImage || typeof mainImage !== "string" || mainImage.trim() === "") {
+              mainImage = "/car-animated.gif";
+            }
+            // Log: Görsel yolları ve fallback nedeni
+            console.log('[GÖRSEL] Araç:', car.name, '| images:', car.images, '| mainImage:', mainImage);
+            if(mainImage === "/car-animated.gif") {
+              console.warn('[GÖRSEL] Fallback görsel kullanıldı:', car.name, car.images);
+            }
+            // Next.js Image için width/height zorunlu
+            const imageWidth = 500;
+            const imageHeight = 300;
+
             return (
               <Card
                 key={car.id}
@@ -304,9 +360,10 @@ export function CarListing({ filters }: CarListingProps) {
                   <Image
                     src={mainImage}
                     alt={car.name}
-                    width={500}
-                    height={300}
+                    width={imageWidth}
+                    height={imageHeight}
                     className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/car-animated.gif"; }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
@@ -346,14 +403,7 @@ export function CarListing({ filters }: CarListingProps) {
                     </div>
                   )}
 
-                  <div className="absolute top-4 right-4 flex space-x-2">
-                    <Button size="sm" variant="ghost" className="bg-black/50 hover:bg-black/70 text-white rounded-full p-2">
-                      <Heart className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="bg-black/50 hover:bg-black/70 text-white rounded-full p-2">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  
 
                   <div className="absolute bottom-4 left-4 right-4">
                     <div className="flex items-center justify-between">

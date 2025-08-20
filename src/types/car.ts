@@ -1,4 +1,8 @@
+
 export interface Car {
+  seating_capacity: string
+  max_speed: string
+  engine_power: string
   id: number
   name: string
   brand: string
@@ -11,7 +15,7 @@ export interface Car {
   transmission: string
   color: string
   description: string
-  status: "available" | "busy" | "maintenance" | "reserved"
+  status: "available" | "busy" | "maintenance" | "reserved" | "sold"
   available_from: string
   min_driver_age: number
   min_license_years: number

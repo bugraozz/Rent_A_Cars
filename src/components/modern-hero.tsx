@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button"
 import { Play, ArrowRight, X } from "lucide-react"
-import Link from "next/link"
 import { useState } from "react"
 
 export function ModernHero() {
@@ -39,6 +38,7 @@ export function ModernHero() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
           <Button
             size="lg"
+            
             className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0 px-8 py-4 text-lg font-semibold"
           >
             Hemen Başla

@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { search } = req.query
-    const params: any[] = []
+    const params: (string | number)[] = []
     let pc = 0
     let query = `SELECT id, name, city, address, phone, is_active
                  FROM locations

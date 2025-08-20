@@ -47,7 +47,7 @@ export function Testimonials() {
         // En fazla 3 yorumu göster
         setReviews(result.data.slice(0, 3))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("🔥 Reviews yüklenirken hata:", error)
       // Hata durumunda fallback veriler
       const fallbackReviews: Review[] = [
@@ -140,7 +140,7 @@ export function Testimonials() {
                     ))}
                   </div>
 
-                  <p className="text-gray-300 mb-4 leading-relaxed">"{review.comment}"</p>
+                  <p className="text-gray-300 mb-4 leading-relaxed">&quot;{review.comment}&quot;</p>
 
                   {/* Araç bilgisi varsa göster */}
                   {review.car_name && (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -42,7 +42,8 @@ export default function ContactMessagesPage() {
   const [adminResponse, setAdminResponse] = useState('')
   const [responding, setResponding] = useState(false)
 
-  const fetchMessages = async () => {
+
+  const fetchMessages = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/admin/messages?status=${statusFilter}&page=${currentPage}&limit=10`)
@@ -60,11 +61,11 @@ export default function ContactMessagesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, currentPage])
 
   useEffect(() => {
-    fetchMessages()
-  }, [statusFilter, currentPage])
+    fetchMessages();
+  }, [fetchMessages]);
 
   const handleStatusChange = async (messageId: number, newStatus: string) => {
     try {

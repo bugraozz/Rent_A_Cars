@@ -24,10 +24,18 @@ export function CarGallery({ images = [] }: CarGalleryProps) {
   }
 
   return (
-    <section className="relative bg-gray-900">
-      <div className="relative h-[70vh] overflow-hidden">
-        <Image src={galleryImages[currentImage] || "/car-animated.gif"} alt="Car gallery" fill className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+    <section className="relative bg-black">
+      <div className="relative w-full aspect-[16/9]  max-h-[70vh] rounded-xl overflow-hidden shadow-2xl bg-black">
+        <Image
+          src={galleryImages[currentImage] || "/car-animated.gif"}
+          alt="Car gallery"
+          fill
+          className="object-cover object-center w-full h-full rounded-xl transition-transform duration-300"
+          quality={95}
+          priority
+          unoptimized={false}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
         {/* Navigation buttons - only show if more than 1 image */}
         {galleryImages.length > 1 && (
@@ -79,16 +87,23 @@ export function CarGallery({ images = [] }: CarGalleryProps) {
       {/* Thumbnail grid - only show if more than 1 image */}
       {galleryImages.length > 1 && (
         <div className="container mx-auto px-6 py-8">
-          <div className="grid grid-cols-5 gap-4">
+          <div className="flex gap-4 justify-center flex-wrap">
             {galleryImages.map((image, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentImage(index)}
-                className={`relative h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                  index === currentImage ? "border-orange-500" : "border-gray-700"
+                className={`relative w-32 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 shadow-md bg-black/80 ${
+                  index === currentImage ? "border-orange-500 scale-105" : "border-gray-700 opacity-70 hover:opacity-100"
                 }`}
               >
-                <Image src={image || "/car-animated.gif"} alt={`Gallery ${index + 1}`} fill className="object-cover" />
+                <Image
+                  src={image || "/car-animated.gif"}
+                  alt={`Gallery ${index + 1}`}
+                  fill
+                  className="object-cover w-full h-full"
+                  quality={90}
+                  unoptimized={false}
+                />
               </button>
             ))}
           </div>

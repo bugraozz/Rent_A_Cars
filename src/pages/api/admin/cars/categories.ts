@@ -16,7 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const result = await db.query(query)
 
-    const categories = result.rows.map((row: any) => ({
+    interface CategoryRow {
+      category: string;
+      count: string;
+    }
+    const categories = result.rows.map((row: CategoryRow) => ({
       name: row.category,
       count: Number.parseInt(row.count),
     }))

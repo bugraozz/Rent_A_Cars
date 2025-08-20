@@ -7,6 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const result = await db.query('SELECT * FROM customers ORDER BY created_at DESC');
       return res.status(200).json({ success: true, data: result.rows });
     } catch (error) {
+      console.error('User listing error:', error instanceof Error ? error.message : error);
       return res.status(500).json({ success: false, error: 'Sunucu hatası' });
     }
   }
@@ -57,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ message: 'Güncelleme başarılı', user: result.rows[0] });
     } catch (error) {
+      console.error('User update error:', error instanceof Error ? error.message : error);
       return res.status(500).json({ message: 'Sunucu hatası' });
     }
   }

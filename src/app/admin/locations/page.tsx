@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminGuard } from '@/components/AdminGuard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,31 +13,35 @@ import type { Location, LocationCreate } from '@/types/location'
 
 export default function AdminLocationsPage() {
   const [locations, setLocations] = useState<Location[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
+    const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('')
 
   // form state
   const [form, setForm] = useState<LocationCreate>({ name: '', address: '', city: '', phone: '', is_active: true })
   const [saving, setSaving] = useState(false)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
-      setLoading(true)
-      const qs = search ? `?search=${encodeURIComponent(search)}` : ''
-      const res = await fetch(`/api/admin/locations${qs}`)
-      const json = await res.json()
-      if (json.success) setLocations(json.data)
-    } catch (e: any) {
-      console.error(e)
-      toast.error('Lokasyonlar yüklenemedi')
+      setLoading(true);
+      const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+      const res = await fetch(`/api/admin/locations${qs}`);
+      const json = await res.json();
+      if (json.success) setLocations(json.data);
+    } catch (e: unknown) {
+      console.error(e);
+      if (e instanceof Error) {
+        toast.error('Lokasyonlar yüklenemedi: ' + e.message);
+      } else {
+        toast.error('Lokasyonlar yüklenemedi');
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [search]);
 
   useEffect(() => {
     load()
-  }, [])
+  }, [load])
 
   const onCreate = async () => {
     if (!form.name || !form.address || !form.city) {

@@ -51,16 +51,17 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         WHERE 1=1
       `;
 
-      const params: any[] = [];
+  const params: (string | number)[] = [];
       let paramCount = 0;
 
-      if (category) {
+
+      if (category && typeof category === 'string') {
         paramCount++;
         query += ` AND c.category = $${paramCount}`;
         params.push(category);
       }
 
-      if (status) {
+      if (status && typeof status === 'string') {
         paramCount++;
         query += ` AND c.status = $${paramCount}`;
         params.push(status);
@@ -76,16 +77,17 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
       // Count query for pagination
       let countQuery = `SELECT COUNT(DISTINCT c.id) FROM cars c WHERE 1=1`;
-      const countParams: any[] = [];
+  const countParams: (string | number)[] = [];
       let countParamCount = 0;
 
-      if (category) {
+
+      if (category && typeof category === 'string') {
         countParamCount++;
         countQuery += ` AND c.category = $${countParamCount}`;
         countParams.push(category);
       }
 
-      if (status) {
+      if (status && typeof status === 'string') {
         countParamCount++;
         countQuery += ` AND c.status = $${countParamCount}`;
         countParams.push(status);

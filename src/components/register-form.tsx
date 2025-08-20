@@ -326,7 +326,7 @@ export function RegisterForm() {
                   <Link href="/privacy" className="text-orange-500 hover:text-orange-400">
                     Gizlilik Politikası
                   </Link>
-                  'nı okudum ve kabul ediyorum.
+                  &apos;nı okudum ve kabul ediyorum.
                 </Label>
               </div>
 

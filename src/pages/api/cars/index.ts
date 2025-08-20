@@ -1,6 +1,28 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import db from '@/lib/db'
 
+
+
+interface CarRow {
+  id: number;
+  brand: string;
+  model: string;
+  year: number;
+  status: string;
+  features?: string | string[];
+  images?: string[];
+  available_from?: string;
+  location_id?: number;
+  location_name?: string;
+  location_city?: string;
+  is_currently_reserved?: boolean;
+  next_available_date?: string;
+  rating?: number;
+  review_count?: number;
+  daily_price?: number;
+  created_at?: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ 
@@ -12,8 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log('Public cars API called')
     const { locations } = req.query
-    let whereClauses: string[] = []
-    const params: any[] = []
+    const whereClauses: string[] = []
+  const params: (string | number | boolean | null | undefined)[] = []
     let pc = 0
     // Parse locations param (comma-separated IDs)
     let locationIds: number[] = []
@@ -21,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       locationIds = locations.split(',').map((id) => parseInt(id)).filter((n) => !isNaN(n))
       if (locationIds.length > 0) {
         pc++
-        params.push(locationIds)
+  params.push(locationIds as unknown as number)
         whereClauses.push(`c.location_id = ANY($${pc}::int[])`)
       }
     }
@@ -92,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })))
 
     // Veriyi frontend'in beklediği formatta düzenle
-  const cars = result.rows.map((car: any) => {
+  const cars = result.rows.map((car: CarRow) => {
       let effectiveStatus = car.status
       let effectiveAvailableFrom = car.available_from
       

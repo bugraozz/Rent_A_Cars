@@ -8,6 +8,10 @@ const pool = new Pool({
   port: 5432,
 })
 
-export default {
-  query: (text: string, params?: any[]) => pool.query(text, params),
+type QueryParams = (string | number | boolean | null | undefined)[];
+
+const db = {
+  query: (text: string, params?: QueryParams) => pool.query(text, params),
 }
+
+export default db;

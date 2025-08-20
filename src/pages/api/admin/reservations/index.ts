@@ -2,6 +2,31 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import db from '@/lib/db'
 import { getUserFromRequest, requireAuth } from '@/lib/auth'
 
+interface QueryParams extends Array<string | number> {
+  [index: number]: string | number;
+}
+
+interface ReservationRow {
+  id: number;
+  customer_id: number;
+  car_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  brand: string;
+  model: string;
+  year: number;
+  daily_price: number;
+  total_amount: string;
+  daily_rate: string;
+  deposit_amount: string;
+  total_days: string;
+  car_images: string[];
+  created_at: string;
+  status: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Admin authentication check
   try {
@@ -53,10 +78,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE 1=1
     `
 
-    const params: any[] = []
+    const params: QueryParams = []
     let paramCount = 0
 
-    if (status && status !== 'all') {
+    if (status && status !== 'all' && typeof status === 'string') {
       paramCount++
       query += ` AND r.status = $${paramCount}`
       params.push(status)
@@ -73,10 +98,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Count query for pagination
     let countQuery = `SELECT COUNT(DISTINCT r.id) FROM reservations r LEFT JOIN customers u ON r.customer_id = u.id LEFT JOIN cars c ON r.car_id = c.id WHERE 1=1`
-    const countParams: any[] = []
+    const countParams: QueryParams = []
     let countParamCount = 0
 
-    if (status && status !== 'all') {
+    if (status && status !== 'all' && typeof status === 'string') {
       countParamCount++
       countQuery += ` AND r.status = $${countParamCount}`
       countParams.push(status)
@@ -105,7 +130,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await db.query(query, params)
 
     // Format the data
-    const reservations = result.rows.map((reservation: any) => ({
+    const reservations = result.rows.map((reservation: ReservationRow) => ({
       ...reservation,
       customer_name: `${reservation.first_name} ${reservation.last_name}`,
       car_name: `${reservation.brand} ${reservation.model} ${reservation.year}`,

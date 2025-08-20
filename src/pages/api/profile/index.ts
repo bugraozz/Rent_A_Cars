@@ -61,7 +61,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const reservationsResult = await db.query(reservationsQuery, [user.id])
       
       // Format reservations
-      const reservations = reservationsResult.rows.map((reservation: any) => ({
+      interface DbReservation {
+        brand: string;
+        model: string;
+        year: number;
+        car_images: string[];
+        [key: string]: unknown;
+      }
+      
+      const reservations = reservationsResult.rows.map((reservation: DbReservation) => ({
         ...reservation,
         car_name: `${reservation.brand} ${reservation.model} ${reservation.year}`,
         car_images: reservation.car_images || []

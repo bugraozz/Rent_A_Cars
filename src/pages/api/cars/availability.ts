@@ -69,9 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // available_from tarihi kontrolünü tamamen kaldır
     if (car.status === 'reserved') {
       // Araç şu anda rezerve edilmiş, sadece bugünkü aktif rezervasyonu kontrol et
-      const today = new Date().toISOString().split('T')[0]
-      const requestedStartDate = new Date(start_date).toISOString().split('T')[0]
-      
       // Sadece bugün veya daha sonraki tarihler için rezervasyon kabul et
       // available_from kontrolü yapma, çünkü gelecekteki rezervasyonlar engel olmamalı
       console.log('🔥 Car is reserved but checking if dates are still available for new booking')

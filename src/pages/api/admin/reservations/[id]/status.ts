@@ -20,6 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { id } = req.query
 
+  if (!id || Array.isArray(id)) {
+    return res.status(400).json({ success: false, error: "Geçersiz id" });
+  }
+
   if (req.method === 'PUT') {
     try {
       const { status, notes } = req.body

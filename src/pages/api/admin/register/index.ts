@@ -77,8 +77,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Kullanıcı başarıyla oluşturuldu',
       user: result.rows[0],
     });
-  } catch (error: any) {
-    console.error('Kayıt hatası:', error);
+  } catch (error) {
+    console.error('Kayıt hatası:', error instanceof Error ? error.message : error);
     return res.status(500).json({ message: 'Sunucu hatası' });
   }
 }

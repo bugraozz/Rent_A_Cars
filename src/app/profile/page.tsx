@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { User, Calendar, Car, Phone, Mail, Edit, Save, X, MessageSquare, Star, Bell, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -216,32 +215,6 @@ export default function ProfilePage() {
     }
   }
 
-  const handleReviewSubmit = async (reservationId: number, rating: number, comment: string) => {
-    try {
-      const response = await fetch('/api/reviews/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reservation_id: reservationId,
-          rating,
-          comment
-        })
-      })
-
-      if (response.ok) {
-        // Refresh reservations and reviews
-        fetchProfile()
-        fetchUserReviews()
-        setShowReviewForm(null) // Close review form
-        toast.success('Değerlendirmeniz başarıyla gönderildi!')
-      }
-    } catch (error) {
-      console.error('Error submitting review:', error)
-      toast.error('Değerlendirme gönderilirken hata oluştu')
-    }
-  }
 
   const handleSaveProfile = async () => {
     try {

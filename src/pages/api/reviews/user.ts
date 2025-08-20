@@ -59,7 +59,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [userId]
     )
 
-    const reviews = result.rows.map((review: any) => ({
+    interface ReviewRow {
+      id: number;
+      reservation_id: number;
+      rating: number;
+      comment: string;
+      brand: string | null;
+      model: string | null;
+      year: number | null;
+      start_date: string | null;
+      end_date: string | null;
+      created_at: string;
+    }
+
+    const reviews = result.rows.map((review: ReviewRow) => ({
       id: review.id,
       reservation_id: review.reservation_id,
       rating: review.rating,

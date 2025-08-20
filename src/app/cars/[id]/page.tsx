@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+// ...existing code...
+import React, { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
 import { ModernFooter } from "@/components/modern-footer"
@@ -12,29 +13,6 @@ import { RelatedCars } from "@/components/related-cars"
 import { toast } from "sonner"
 import { CarDateSelector } from "@/components/car-date-selector"
 import type { Car } from "@/types/car"
-
-interface LocalCar {
-  id: number
-  name: string
-  brand: string
-  model: string
-  year: number
-  category: string
-  price: number
-  daily_price: number
-  fuel_type: string
-  transmission: string
-  color: string
-  images: string[]
-  description: string
-  status: "available" | "sold" | "maintenance"
-  min_driver_age: number
-  min_license_years: number
-  requires_credit_card: boolean
-  requires_deposit: boolean
-  created_at: string
-  available_from: string
-}
 
 // Component for car booking card
 function CarBookingCard({ car }: { car: Car }) {
@@ -50,7 +28,7 @@ export default function CarDetailPage() {
   const [car, setCar] = useState<Car | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchCarDetail = async () => {
+  const fetchCarDetail = React.useCallback(async () => {
     try {
       setLoading(true)
       
@@ -75,7 +53,7 @@ export default function CarDetailPage() {
       if (result.success && result.data) {
         // ID'ye göre aracı bul
         const carId = parseInt(params.id as string)
-        const foundCar = result.data.find((c: any) => c.id === carId)
+        const foundCar = result.data.find((c: Car) => c.id === carId)
         
         if (foundCar) {
           // Add available_from if missing and ensure required fields
@@ -101,13 +79,13 @@ export default function CarDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params?.id])
 
   useEffect(() => {
     if (params?.id) {
       fetchCarDetail()
     }
-  }, [params?.id])
+  }, [params?.id, fetchCarDetail])
 
   if (loading) {
     return (

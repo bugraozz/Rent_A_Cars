@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,7 +67,7 @@ export default function AdminBookingsPage() {
     totalPages: 0,
   })
 
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
@@ -93,11 +93,11 @@ export default function AdminBookingsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.page, pagination.limit, searchTerm, statusFilter])
 
   useEffect(() => {
-    fetchReservations()
-  }, [pagination.page, statusFilter])
+    fetchReservations();
+  }, [fetchReservations]);
 
   const handleSearch = () => {
     setPagination(prev => ({ ...prev, page: 1 }))

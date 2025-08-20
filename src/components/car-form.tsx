@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import { ImagePlus, Loader2, X, Save, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,7 +18,7 @@ import type { Location } from "@/types/location"
 
 interface CarFormProps {
   car?: Car | null
-  onSave: (carData: Partial<Car>) => void
+  onSave: (carData: Partial<Car>) => Promise<void> | void
   onCancel: () => void
   loading?: boolean
 }
@@ -40,6 +41,8 @@ const statuses = [
   { value: "available", label: "Müsait" },
   { value: "busy", label: "Meşgul" },
   { value: "maintenance", label: "Bakımda" },
+  { value: "reserved", label: "Rezerve" },
+  { value: "sold", label: "Satıldı" },
 ]
 
 export default function CarForm({ car, onSave, onCancel, loading = false }: CarFormProps) {
@@ -107,7 +110,7 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
         min_license_years: car.min_license_years || 2,
         requires_credit_card: car.requires_credit_card ?? true,
         requires_deposit: car.requires_deposit ?? true,
-  location_id: (car as any).location_id ?? undefined,
+  location_id: car.location_id ?? undefined,
       })
     }
   }, [car])
@@ -406,7 +409,7 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
                       <Select
                         value={formData.status}
                         onValueChange={(value) => {
-                          const newFormData = { ...formData, status: value as any }
+                          const newFormData = { ...formData, status: value as "available" | "busy" | "maintenance" | "reserved" | "sold" }
                           // Status "available" değilse available_from'u temizle
                           if (value !== "available") {
                             newFormData.available_from = ""
@@ -426,7 +429,7 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-slate-400 mt-1">
-                        "Müsait" seçerseniz araç hemen kiralanabilir. Gelecek tarih ayarlamak isterseniz yukarıdaki alanı kullanın.
+                        &quot;Müsait&quot; seçerseniz araç hemen kiralanabilir. Gelecek tarih ayarlamak isterseniz yukarıdaki alanı kullanın.
                       </p>
                     </div>
                   </div>
@@ -594,7 +597,7 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
                           <div className="text-sm text-slate-400 text-center">
                             Resimlerinizi buraya sürükleyip bırakın veya dosya seçmek için tıklayın
                           </div>
-                          <div className="text-xs text-slate-500">Maksimum 10 resim, her biri 5MB'dan küçük</div>
+                          <div className="text-xs text-slate-500">Maksimum 10 resim, her biri 5MB&#39;dan küçük</div>
                           <Input
                             type="file"
                             accept="image/*"
@@ -633,10 +636,12 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
                             key={index}
                             className="relative aspect-square rounded-md overflow-hidden border border-slate-600 group hover:border-orange-500 transition-colors"
                           >
-                            <img
+                            <Image
                               src={image || "/placeholder.svg"}
                               alt={`Araç resmi ${index + 1}`}
                               className="object-cover w-full h-full"
+                              width={200}
+                              height={200}
                             />
                             {index === 0 && (
                               <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">

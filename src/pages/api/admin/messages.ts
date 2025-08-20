@@ -2,8 +2,16 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import pool from '@/lib/db'
 import { getUserFromRequest, requireAdmin } from '@/lib/auth'
 
+interface ContactMessage {
+  id: number;
+  email: string;
+  subject: string;
+  admin_response?: string;
+  status: string;
+}
+
 // Kullanıcıya bildirim gönderen yardımcı fonksiyon
-async function sendNotificationToUser(contactMessage: any) {
+async function sendNotificationToUser(contactMessage: ContactMessage) {
   try {
     // Kullanıcının sistemde kayıtlı olup olmadığını kontrol et
     const userCheck = await pool.query(
@@ -61,10 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         FROM contact_messages cm
         LEFT JOIN admins a ON cm.responded_by = a.id
       `
-      let queryParams: any[] = []
+      const queryParams: (string | number)[] = []
       let paramCount = 0
 
-      if (status && status !== 'all') {
+      if (status && status !== 'all' && typeof status === 'string') {
         paramCount++
         query += ` WHERE cm.status = $${paramCount}`
         queryParams.push(status)
@@ -84,9 +92,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Get total count for pagination
       let countQuery = 'SELECT COUNT(*) FROM contact_messages'
-      let countParams: any[] = []
+      const countParams: (string | number)[] = []
       
-      if (status && status !== 'all') {
+      if (status && status !== 'all' && typeof status === 'string') {
         countQuery += ' WHERE status = $1'
         countParams.push(status)
       }
@@ -124,8 +132,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      let updateFields = []
-      let updateValues = []
+      const updateFields: string[] = []
+      const updateValues: (string | number)[] = []
       let paramCount = 0
 
       if (status) {

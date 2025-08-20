@@ -44,7 +44,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔥 Reviews query result:', result.rows.length)
 
     // Veriyi frontend'in beklediği formatta düzenle
-    const reviews = result.rows.map((review: any) => {
+    type ReviewRow = {
+      id: number
+      rating: number
+      comment: string
+      created_at: string
+      first_name: string | null
+      last_name: string | null
+      email: string | null
+      brand: string | null
+      model: string | null
+      year: number | null
+      start_date: string | null
+      end_date: string | null
+    }
+
+    const reviews = result.rows.map((review: ReviewRow) => {
       // İsmi gizlemek için sadece ilk harfi göster
       const firstName = review.first_name || 'Anonim'
       const lastName = review.last_name || 'K.'
