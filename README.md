@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# Go Drive - Premium Car Rental Platform
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Go Drive is a modern, full-stack car rental web application built with Next.js, React, TypeScript, and PostgreSQL. It provides a seamless experience for both customers and administrators, featuring real-time booking, user management, and a robust admin dashboard.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features
 
-## Learn More
+- 🚗 **Car Listing & Booking:** Browse, filter, and book cars with real-time availability.
+- ⭐ **Dynamic Ratings:** Car ratings are calculated from real user reviews.
+- 👤 **Authentication & Roles:** Secure login, registration, JWT-based auth, admin/user roles.
+- 🛠️ **Admin Panel:** Manage users, change roles, reset passwords, toggle maintenance mode.
+- 📨 **Contact & Messaging:** Users can send messages; admins can view and respond.
+- 🛡️ **Maintenance Mode:** Restrict access to admins during maintenance.
+- 📊 **Dashboard:** View statistics, user/customer counts, and booking analytics.
+- 📱 **Responsive UI:** Modern, mobile-friendly design with shadcn/ui and Tailwind CSS.
 
-To learn more about Next.js, take a look at the following resources:
+## Technologies Used
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Frontend:** Next.js (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui, Lucide Icons
+- **Backend:** Next.js API routes, Node.js
+- **Database:** PostgreSQL
+- **ORM/DB:** node-postgres (pg)
+- **Authentication:** JWT, HttpOnly cookies, bcrypt password hashing
+- **UI/UX:** Radix UI, shadcn/ui, custom components
+- **Other:** ESLint, Prettier, Sonner (notifications), Formidable (file upload)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database Structure
 
-## Deploy on Vercel
+- **PostgreSQL** is used for all persistent data.
+- Main tables:
+  - `admins`: Admin users (id, username, email, password, role, timestamps)
+  - `customers`: Customer users (id, name, email, password, role, etc.)
+  - `cars`: Car inventory and details
+  - `bookings`: Car reservations
+  - `reviews`: User reviews for cars
+  - `contact_messages`: User contact/feedback messages
+  - `notifications`: User notifications
+  - `settings`: App-wide settings (e.g., maintenance mode)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See `admin_setup.sql` for schema and initial data.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Setup & Installation
+
+1. **Clone the repository:**
+	```bash
+	git clone https://github.com/bugraozz/go-drive.git
+	cd go-drive
+	```
+
+2. **Install dependencies:**
+	```bash
+	npm install
+	# or
+	yarn install
+	```
+
+3. **Configure environment variables:**
+	- Create a `.env.local` file and set your database and JWT secret:
+	  ```
+	  DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/go_drive
+	  JWT_SECRET=your-super-secret-jwt-key
+	  ```
+
+4. **Set up the database:**
+	- Make sure PostgreSQL is running.
+	- Run the SQL in `admin_setup.sql` to create tables and a default admin user.
+
+5. **Start the development server:**
+	```bash
+	npm run dev
+	# or
+	yarn dev
+	```
+
+6. **Access the app:**
+	- Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Default Admin Login
+
+- **Email:** admin@drive.com
+- **Password:** admin123
+
+> Change the default password after first login!
+
+## Project Structure
+
+- `src/app/` - Next.js App Router pages (public, admin, auth, etc.)
+- `src/components/` - Reusable UI components
+- `src/pages/api/` - API routes (auth, admin, cars, contact, etc.)
+- `src/lib/` - Database and authentication utilities
+- `src/types/` - TypeScript types
+
+## Customization
+
+- **UI:** Easily customizable with Tailwind CSS and shadcn/ui.
+- **Database:** Update `src/lib/db.ts` for your own DB credentials.
+- **Environment:** Use `.env.local` for secrets and config.
+
+## License
+
+This project is for educational and demonstration purposes.
