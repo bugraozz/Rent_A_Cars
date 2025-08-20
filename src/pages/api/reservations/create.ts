@@ -19,11 +19,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       startDate,
       endDate,
       pickupLocation,
+      pickupLocationId,
       returnLocation,
+      returnLocationId,
       notes
     } = req.body
 
-    if (!carId || !startDate || !endDate || !pickupLocation) {
+  if (!carId || !startDate || !endDate || !pickupLocation) {
       return res.status(400).json({ error: 'Eksik bilgiler' })
     }
 
@@ -40,7 +42,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Araç bilgisini getir
-    const carQuery = 'SELECT * FROM cars WHERE id = $1 AND status = $2'
+    const carQuery = `
+      SELECT c.*, l.name as location_name, l.city as location_city
+      FROM cars c
+      LEFT JOIN locations l ON l.id = c.location_id
+      WHERE c.id = $1 AND c.status = $2`
     const carResult = await db.query(carQuery, [carId, 'available'])
     
     if (carResult.rows.length === 0) {
@@ -48,6 +54,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const car = carResult.rows[0]
+
+    // Lokasyon kontrolü: Araç belirli bir lokasyona atanmışsa, alış lokasyonu bu lokasyon olmalı
+    if (car.location_id) {
+      const carLocId = Number(car.location_id)
+      if (pickupLocationId !== undefined && pickupLocationId !== null) {
+        const plId = parseInt(pickupLocationId)
+        if (isNaN(plId) || plId !== carLocId) {
+          return res.status(400).json({ 
+            error: `Bu araç sadece '${car.location_name} (${car.location_city})' lokasyonundan teslim alınabilir.` 
+          })
+        }
+      } else {
+        // pickupLocation string ile kaba doğrulama (daha zayıf).
+        const expected = car.location_name && car.location_city ? `${car.location_name} (${car.location_city})` : null
+        if (expected && pickupLocation !== expected) {
+          return res.status(400).json({ 
+            error: `Bu araç sadece '${expected}' lokasyonundan teslim alınabilir.` 
+          })
+        }
+      }
+    }
 
     // Müsaitlik kontrolü - Sadece aktif rezervasyonlarla çakışma kontrolü
     const conflictQuery = `
@@ -77,12 +104,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const depositAmount = totalAmount * 0.2 // %20 depozito
 
     // Rezervasyon oluştur
+    const effectiveReturnLocationId = (returnLocationId ?? pickupLocationId) ?? null
     const insertQuery = `
       INSERT INTO reservations (
-        car_id, customer_id, start_date, end_date, 
-        pickup_location, return_location, daily_rate, 
-        total_days, total_amount, deposit_amount, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        car_id, customer_id, start_date, end_date,
+        pickup_location, return_location,
+        pickup_location_id, return_location_id,
+        daily_rate, total_days, total_amount, deposit_amount, notes
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6,
+        $7, $8,
+        $9, $10, $11, $12, $13
+      )
       RETURNING *
     `
 
@@ -93,6 +127,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       endDate,
       pickupLocation,
       returnLocation || pickupLocation,
+      pickupLocationId ?? null,
+      effectiveReturnLocationId,
       dailyRate,
       totalDays,
       totalAmount,

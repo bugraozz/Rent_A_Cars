@@ -19,7 +19,7 @@ export default function BookingPage() {
   useEffect(() => {
     const loadBookingData = async () => {
       try {
-        let carId, startDate, endDate, pickupLocation, rentalDays, subtotal, tax, total
+  let carId, startDate, endDate, pickupLocation, pickupLocationId, rentalDays, subtotal, tax, total
 
         // Önce query params'tan veri almaya çalış
         if (searchParams) {
@@ -28,6 +28,7 @@ export default function BookingPage() {
           endDate = searchParams.get('endDate')
           pickupLocation = searchParams.get('pickupLocation')
           rentalDays = searchParams.get('rentalDays')
+          pickupLocationId = searchParams.get('pickupLocationId')
           subtotal = searchParams.get('subtotal')
           tax = searchParams.get('tax')
           total = searchParams.get('total')
@@ -51,6 +52,7 @@ export default function BookingPage() {
             startDate = parsed.startDate
             endDate = parsed.endDate
             pickupLocation = parsed.pickupLocation
+            pickupLocationId = parsed.pickupLocationId?.toString()
             rentalDays = parsed.rentalDays?.toString()
             subtotal = parsed.subtotal?.toString()
             tax = parsed.tax?.toString()
@@ -68,6 +70,7 @@ export default function BookingPage() {
             startDate,
             endDate,
             pickupLocation,
+            pickupLocationId: pickupLocationId ? parseInt(pickupLocationId) : undefined,
             rentalDays: parseInt(rentalDays || '0'),
             subtotal: parseFloat(subtotal || '0'),
             tax: parseFloat(tax || '0'),
@@ -120,6 +123,7 @@ export default function BookingPage() {
               startDate,
               endDate,
               pickupLocation,
+              pickupLocationId: pickupLocationId ? parseInt(pickupLocationId) : undefined,
               rentalDays: parseInt(rentalDays || '0'),
               subtotal: parseFloat(subtotal || '0'),
               tax: parseFloat(tax || '0'),

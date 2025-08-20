@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import type { Car } from "@/types/car"
+import type { Location } from "@/types/location"
 
 interface CarFormProps {
   car?: Car | null
@@ -66,7 +67,23 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
     min_license_years: 2,
     requires_credit_card: true,
     requires_deposit: true,
+    location_id: undefined,
   })
+
+  // Locations
+  const [locations, setLocations] = useState<Location[]>([])
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const res = await fetch('/api/admin/locations?onlyActive=true')
+        const json = await res.json()
+        if (json.success) setLocations(json.data)
+      } catch (e) {
+        console.error('Lokasyonlar yüklenemedi', e)
+      }
+    }
+    loadLocations()
+  }, [])
 
   // Car prop'u değiştiğinde formData'yı güncelle
   useEffect(() => {
@@ -90,6 +107,7 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
         min_license_years: car.min_license_years || 2,
         requires_credit_card: car.requires_credit_card ?? true,
         requires_deposit: car.requires_deposit ?? true,
+  location_id: (car as any).location_id ?? undefined,
       })
     }
   }, [car])
@@ -276,6 +294,27 @@ export default function CarForm({ car, onSave, onCancel, loading = false }: CarF
                     </div>
 
                     <div>
+                        <Label htmlFor="location" className="text-white">
+                          Lokasyon
+                        </Label>
+                        <Select
+                          value={formData.location_id ? String(formData.location_id) : ''}
+                          onValueChange={(value) => setFormData({ ...formData, location_id: Number(value) })}
+                        >
+                          <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                            <SelectValue placeholder="Lokasyon seçin (opsiyonel)" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-800 border-slate-700">
+                            {locations.map((loc) => (
+                              <SelectItem key={loc.id} value={String(loc.id)}>
+                                {loc.name} ({loc.city})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
                       <Label htmlFor="price" className="text-white">
                         Satış Fiyatı (₺) *
                       </Label>

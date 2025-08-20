@@ -13,7 +13,8 @@ import { Car } from "@/types/car"
 
 interface CarListingProps {
   filters?: {
-    location?: string
+  location?: string
+  locationIds?: number[]
     startDate?: string
     endDate?: string
     category?: string
@@ -48,6 +49,9 @@ export function CarListing({ filters }: CarListingProps) {
       }
       if (filters?.category && filters.category !== 'all') {
         queryParams.set('category', filters.category)
+      }
+      if (filters?.locationIds && filters.locationIds.length > 0) {
+        queryParams.set('locations', filters.locationIds.join(','))
       }
       
       const apiUrl = `/api/cars${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
@@ -122,6 +126,12 @@ export function CarListing({ filters }: CarListingProps) {
 
   // Filtrelenmiş araçları hesapla
   const filteredCars = cars.filter(car => {
+    // Lokasyon filtresi
+    if (filters?.locationIds && filters.locationIds.length > 0) {
+      if (!car.location_id || !filters.locationIds.includes(Number(car.location_id))) {
+        return false
+      }
+    }
     // Kategori filtresi
     if (filters?.category && filters.category !== 'all') {
       if (car.category?.toLowerCase() !== filters.category.toLowerCase()) {
@@ -402,7 +412,7 @@ export function CarListing({ filters }: CarListingProps) {
                   </div>
 
                   <div className="flex space-x-3">
-                    <Link href={`/cars/${car.id}`} className="flex-1">
+                    <Link href={{ pathname: `/cars/${car.id}`, query: (filters?.locationIds && filters.locationIds.length > 0) ? { locations: filters.locationIds.join(',') } : undefined }} className="flex-1">
                       <Button
                         variant="outline"
                         className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black bg-transparent"

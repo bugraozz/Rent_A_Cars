@@ -206,7 +206,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     console.log("Received body:", JSON.stringify(body, null, 2));
 
     // Validasyon
-    const requiredFields = [
+  const requiredFields = [
       "name",
       "brand", 
       "model",
@@ -254,14 +254,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Araç ekleme
-    const carQuery = `
+  const carQuery = `
       INSERT INTO cars (
-        name, brand, model, year, category, price, daily_price,
-        fuel_type, transmission, color, description, status,
+    name, brand, model, year, category, price, daily_price,
+    fuel_type, transmission, color, description, status,
+    location_id,
         available_from, min_driver_age, min_license_years,
         requires_credit_card, requires_deposit, created_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW()
       ) RETURNING *
     `;
 
@@ -271,13 +272,14 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       body.model,
       parseInt(body.year),
       body.category,
-      parseFloat(body.price),
+  parseFloat(body.price),
       parseFloat(body.daily_price),
       body.fuel_type,
       body.transmission,
       body.color,
       body.description || "",
       body.status || "available",
+  body.location_id ? parseInt(body.location_id) : null,
       body.available_from || new Date().toISOString().split("T")[0],
       parseInt(body.min_driver_age) || 21,
       parseInt(body.min_license_years) || 2,

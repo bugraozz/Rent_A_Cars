@@ -22,6 +22,10 @@ export interface Car {
   rating?: number
   review_count?: number
   features?: string[]
+  // Optional location linkage
+  location_id?: number | null
+  location_name?: string | null
+  location_city?: string | null
 }
 
 export interface CarImage {

@@ -12,6 +12,7 @@ export default function CarsPage() {
   const searchParams = useSearchParams()
   const [filters, setFilters] = useState({
     location: "",
+  locationIds: [] as number[],
     startDate: "",
     endDate: "",
     category: "",
@@ -22,6 +23,10 @@ export default function CarsPage() {
     if (searchParams) {
       const newFilters = {
         location: searchParams.get('location') || "",
+        locationIds: (searchParams.get('locations') || '')
+          .split(',')
+          .map((s) => parseInt(s))
+          .filter((n) => !isNaN(n)),
         startDate: searchParams.get('startDate') || "",
         endDate: searchParams.get('endDate') || "",
         category: searchParams.get('category') || "",
@@ -36,13 +41,18 @@ export default function CarsPage() {
       <CarHero />
       <div className="container mx-auto px-6 py-16">
         {/* Arama filtreleri görünür olsun */}
-        {(filters.location || filters.startDate || filters.endDate || filters.category) && (
+        {(filters.location || (filters.locationIds && filters.locationIds.length) || filters.startDate || filters.endDate || filters.category) && (
           <div className="mb-8 p-4 bg-gray-900/50 rounded-lg border border-gray-800">
             <h3 className="text-lg font-semibold text-white mb-3">Arama Filtreleri:</h3>
             <div className="flex flex-wrap gap-4 text-sm">
               {filters.location && (
                 <div className="bg-orange-500 text-black px-3 py-1 rounded-full">
                   📍 {filters.location}
+                </div>
+              )}
+              {filters.locationIds && filters.locationIds.length > 0 && (
+                <div className="bg-orange-500 text-black px-3 py-1 rounded-full">
+                  📍 {filters.locationIds.length} lokasyon
                 </div>
               )}
               {filters.startDate && (

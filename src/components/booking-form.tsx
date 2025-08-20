@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +13,7 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
 import type { Car } from "@/types/car"
+import type { Location } from "@/types/location"
 
 interface BookingFormProps {
   car: Car
@@ -19,6 +21,7 @@ interface BookingFormProps {
     startDate?: string
     endDate?: string
     pickupLocation?: string
+  pickupLocationId?: number
     rentalDays?: number
     subtotal?: number
     tax?: number
@@ -47,6 +50,8 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [pickupLocation, setPickupLocation] = useState(initialData?.pickupLocation || '')
+  const [locations, setLocations] = useState<Location[]>([])
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null)
   const [specialRequests, setSpecialRequests] = useState('')
   const [cardNumber, setCardNumber] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
@@ -158,6 +163,36 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
 
     fetchAvailability()
   }, [car?.id])
+
+  // Load active locations and default to car location if present
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/locations')
+        const json = await res.json()
+        if (json.success) {
+          setLocations(json.data)
+          // If initialData carries selection, prioritize it
+          if (initialData?.pickupLocationId) {
+            const found = json.data.find((l: Location) => l.id === Number(initialData.pickupLocationId))
+            if (found) {
+              setSelectedLocationId(found.id)
+              if (!pickupLocation) setPickupLocation(`${found.name} (${found.city})`)
+            }
+          } else if (!pickupLocation && car?.location_id) {
+            const found = json.data.find((l: Location) => l.id === Number(car.location_id))
+            if (found) {
+              setSelectedLocationId(found.id)
+              setPickupLocation(`${found.name} (${found.city})`)
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Lokasyonlar yüklenemedi', e)
+      }
+    }
+    load()
+  }, [car?.location_id])
 
   // Tarih değişikliklerini izle ve müsaitlik kontrolü yap
   useEffect(() => {
@@ -330,6 +365,10 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
       setError('Lütfen tüm kişisel bilgileri doldurun')
       return
     }
+    if (!selectedLocationId) {
+      setError('Lütfen bir alış lokasyonu seçin')
+      return
+    }
 
     if (!cardNumber.replace(/\s/g, '') || cardNumber.replace(/\s/g, '').length < 16) {
       setError('Lütfen geçerli bir kart numarası girin')
@@ -350,6 +389,8 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
         carId: car.id,
         startDate,
         endDate,
+        pickupLocation,
+        pickupLocationId: selectedLocationId,
         totalPrice: total,
         customerInfo: {
           firstName,
@@ -357,7 +398,6 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
           email,
           phone
         },
-        pickupLocation,
         specialRequests,
         paymentInfo: {
           cardNumber: cardNumber.replace(/\s/g, ''),
@@ -557,16 +597,32 @@ export function BookingForm({ car, initialData }: BookingFormProps) {
 
             <div>
               <Label className="text-gray-300 mb-2 block">Alış Lokasyonu *</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-5 w-5 text-orange-500" />
-                <Input
-                  required
-                  value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)}
-                  className="pl-12 bg-gray-800 border-gray-700 text-white focus:border-orange-500"
-                  placeholder="İstanbul Merkez Ofis"
-                />
-              </div>
+              <Select
+                value={selectedLocationId ? String(selectedLocationId) : ''}
+                onValueChange={(value) => {
+                  const id = Number(value)
+                  const loc = locations.find((l) => l.id === id)
+                  if (!loc) return
+                  const isCarLoc = car?.location_id ? Number(car.location_id) === loc.id : true
+                  if (!isCarLoc) return
+                  setSelectedLocationId(id)
+                  setPickupLocation(`${loc.name} (${loc.city})`)
+                }}
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectValue placeholder="Lokasyon seçin" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700">
+                  {locations.map((loc) => {
+                    const isCarLoc = car?.location_id ? Number(car.location_id) === loc.id : true
+                    return (
+                      <SelectItem key={loc.id} value={String(loc.id)} disabled={!isCarLoc}>
+                        {loc.name} ({loc.city}){!isCarLoc ? ' — uygun değil' : ''}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

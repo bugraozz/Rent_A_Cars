@@ -1,23 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, Gauge, Users, Fuel, Settings, Calendar, Car, Palette } from "lucide-react"
-
-interface Car {
-  id: number
-  name: string
-  brand: string
-  model: string
-  year: number
-  category: string
-  price: number
-  daily_price: number
-  fuel_type: string
-  transmission: string
-  color: string
-  images: string[]
-  description: string
-  status: "available" | "sold" | "maintenance"
-  created_at?: string
-}
+import { Zap, Gauge, Users, Fuel, Settings, Calendar, Car as CarIcon, Palette } from "lucide-react"
+import type { Car } from "@/types/car"
 
 interface CarSpecsProps {
   car?: Car
@@ -27,14 +10,23 @@ export function CarSpecs({ car }: CarSpecsProps) {
   
   // Dinamik specs (car varsa)
   const dynamicSpecs = car ? [
-    { icon: Car, label: "Marka", value: car.brand },
+    { icon: CarIcon, label: "Marka", value: car.brand },
     { icon: Settings, label: "Model", value: car.model },
     { icon: Calendar, label: "Model Yılı", value: car.year.toString() },
     { icon: Gauge, label: "Kategori", value: car.category },
     { icon: Fuel, label: "Yakıt Tipi", value: car.fuel_type },
     { icon: Settings, label: "Şanzıman", value: car.transmission },
     { icon: Palette, label: "Renk", value: car.color },
-    { icon: Zap, label: "Durum", value: car.status === "available" ? "Müsait" : car.status === "sold" ? "Satıldı" : "Bakımda" },
+    { 
+      icon: Zap, 
+      label: "Durum", 
+      value: 
+        car.status === "available" ? "Müsait" :
+        car.status === "maintenance" ? "Bakımda" :
+        car.status === "busy" ? "Dolu" :
+        car.status === "reserved" ? "Rezerve" :
+        String(car.status)
+    },
   ] 
 
   : [];

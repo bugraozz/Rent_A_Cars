@@ -5,9 +5,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       const result = await db.query('SELECT * FROM customers ORDER BY created_at DESC');
-      return res.status(200).json(result.rows);
+      return res.status(200).json({ success: true, data: result.rows });
     } catch (error) {
-      return res.status(500).json({ message: 'Sunucu hatası' });
+      return res.status(500).json({ success: false, error: 'Sunucu hatası' });
     }
   }
 

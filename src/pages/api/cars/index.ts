@@ -11,14 +11,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     console.log('Public cars API called')
+    const { locations } = req.query
+    let whereClauses: string[] = []
+    const params: any[] = []
+    let pc = 0
+    // Parse locations param (comma-separated IDs)
+    let locationIds: number[] = []
+    if (typeof locations === 'string' && locations.trim().length > 0) {
+      locationIds = locations.split(',').map((id) => parseInt(id)).filter((n) => !isNaN(n))
+      if (locationIds.length > 0) {
+        pc++
+        params.push(locationIds)
+        whereClauses.push(`c.location_id = ANY($${pc}::int[])`)
+      }
+    }
     
     // Önce tüm araçları sayalım
     const countResult = await db.query('SELECT COUNT(*) as total, status FROM cars GROUP BY status')
     console.log('🔥 Car counts by status:', countResult.rows)
     
-    // Tüm araçları getir ve rezervasyon durumlarını kontrol et
-    const result = await db.query(
-      `SELECT 
+    // Tüm araçları getir, rezervasyon ve rating bilgilerini ekle
+    const baseQuery = `SELECT 
         c.*,
         COALESCE(
           json_agg(
@@ -28,6 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ) FILTER (WHERE ci.image_url IS NOT NULL), 
           '[]'::json
         ) as images,
+        l.id as location_id,
+        l.name as location_name,
+        l.city as location_city,
+        -- Ortalama puan ve yorum sayısı
+        COALESCE(AVG(rvw.rating), 0) as rating,
+        COUNT(rvw.id) as review_count,
         -- En yakın rezervasyon bitiş tarihi
         (SELECT MIN(r.end_date) 
          FROM reservations r 
@@ -43,9 +62,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          AND r.start_date <= CURRENT_DATE
          AND r.end_date >= CURRENT_DATE
         ) as is_currently_reserved
-      FROM cars c
-      LEFT JOIN car_images ci ON c.id = ci.car_id
-      GROUP BY c.id
+  FROM cars c
+  LEFT JOIN car_images ci ON c.id = ci.car_id
+  LEFT JOIN locations l ON l.id = c.location_id
+  LEFT JOIN reviews rvw ON rvw.car_id = c.id
+      ${whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : ''}
+      GROUP BY c.id, l.id, l.name, l.city
       ORDER BY 
         CASE 
           WHEN c.status = 'available' THEN 1
@@ -54,7 +76,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ELSE 4
         END,
         c.created_at DESC`
-    )
+
+    const result = await db.query(baseQuery, params)
     
     console.log('🔥 SQL Query executed for ALL cars (including sold)')
     console.log('🔥 Raw SQL result count:', result.rows.length)
@@ -69,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })))
 
     // Veriyi frontend'in beklediği formatta düzenle
-    const cars = result.rows.map((car: any) => {
+  const cars = result.rows.map((car: any) => {
       let effectiveStatus = car.status
       let effectiveAvailableFrom = car.available_from
       
@@ -100,7 +123,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         available_from: effectiveAvailableFrom,
         images: car.images || [],
         is_currently_reserved: car.is_currently_reserved,
-        next_available_date: car.next_available_date
+        next_available_date: car.next_available_date,
+        location_id: car.location_id ?? null,
+        location_name: car.location_name ?? null,
+        location_city: car.location_city ?? null,
+        rating: car.rating ? Number(Number(car.rating).toFixed(2)) : 0,
+        review_count: car.review_count ? Number(car.review_count) : 0
       }
       
       console.log(`🔥 Final processed car ${car.id}:`, { 

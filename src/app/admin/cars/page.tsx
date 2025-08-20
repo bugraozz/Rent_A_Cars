@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Search, Plus, Edit, Trash2, CarIcon, Calendar, Fuel, Settings, Palette, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,8 +43,6 @@ export default function CarsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
- 
-  const router = useRouter()
 
   const fetchCars = async () => {
     setLoading(true)
@@ -118,9 +115,6 @@ export default function CarsPage() {
 
   const stats = getStats()
 
-  
-
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("tr-TR", {
       style: "currency",
@@ -176,8 +170,8 @@ export default function CarsPage() {
         await new Promise((resolve) => setTimeout(resolve, 500))
         setCars(cars.filter((car) => car.id !== id))
         toast.success("İşlem tamamlandı")
-      } catch (error) {
-      toast.error("Hata oluştu")
+      } catch {
+        toast.error("Hata oluştu")
       }
     }
   }
@@ -439,5 +433,3 @@ export default function CarsPage() {
     </div>
   )
 }
-
-

@@ -75,7 +75,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         min_driver_age,
         min_license_years,
         requires_credit_card,
-        requires_deposit,
+          requires_deposit,
+          location_id,
       } = req.body
 
       try {
@@ -86,8 +87,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             fuel_type = $6, transmission = $7, price = $8, daily_price = $9,
             color = $10, description = $11, status = $12,
             available_from = $13, min_driver_age = $14, min_license_years = $15,
-            requires_credit_card = $16, requires_deposit = $17, updated_at = CURRENT_TIMESTAMP
-          WHERE id = $18
+            requires_credit_card = $16, requires_deposit = $17,
+            location_id = $18,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = $19
           RETURNING *
         `
 
@@ -109,6 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           min_license_years || 2,
           Boolean(requires_credit_card),
           Boolean(requires_deposit),
+          location_id ? parseInt(location_id) : null,
           id,
         ])
 

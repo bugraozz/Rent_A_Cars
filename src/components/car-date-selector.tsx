@@ -3,11 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Calendar, MapPin, AlertCircle, Check } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { Car } from "@/types/car"
+import type { Location } from "@/types/location"
 
 interface CarDateSelectorProps {
   car: Car
@@ -29,7 +32,9 @@ export function CarDateSelector({ car }: CarDateSelectorProps) {
   const router = useRouter()
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [pickupLocation, setPickupLocation] = useState('İstanbul Merkez Ofis')
+  const [pickupLocation, setPickupLocation] = useState('')
+  const [locations, setLocations] = useState<Location[]>([])
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null)
   
   const [unavailableDates, setUnavailableDates] = useState<UnavailableDate[]>([])
   const [loading, setLoading] = useState(false)
@@ -83,6 +88,28 @@ export function CarDateSelector({ car }: CarDateSelectorProps) {
   useEffect(() => {
     fetchUnavailableDates()
   }, [car?.id])
+
+  // Load active locations and set default from car
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/locations')
+        const json = await res.json()
+        if (json.success) {
+          setLocations(json.data)
+          // Default selection: car.location_id if present
+          if (car?.location_id) {
+            setSelectedLocationId(Number(car.location_id))
+            const found = json.data.find((l: Location) => l.id === Number(car.location_id))
+            if (found) setPickupLocation(`${found.name} (${found.city})`)
+          }
+        }
+      } catch (e) {
+        console.error('Lokasyonlar yüklenemedi', e)
+      }
+    }
+    load()
+  }, [car?.location_id])
 
   // Validate date range and calculate pricing
   useEffect(() => {
@@ -200,6 +227,10 @@ export function CarDateSelector({ car }: CarDateSelectorProps) {
       alert('Lütfen tarih seçin')
       return
     }
+    if (!selectedLocationId) {
+      alert('Lütfen bir alış lokasyonu seçin')
+      return
+    }
     
     if (!isDateRangeValid) {
       console.log('🔥 Date range is not valid')
@@ -213,6 +244,7 @@ export function CarDateSelector({ car }: CarDateSelectorProps) {
       startDate,
       endDate,
       pickupLocation,
+      pickupLocationId: selectedLocationId,
       rentalDays,
       subtotal,
       tax,
@@ -229,6 +261,7 @@ export function CarDateSelector({ car }: CarDateSelectorProps) {
       startDate,
       endDate,
       pickupLocation,
+      pickupLocationId: selectedLocationId ? String(selectedLocationId) : '',
       rentalDays: rentalDays.toString(),
       subtotal: subtotal.toString(),
       tax: tax.toString(),
@@ -343,16 +376,32 @@ export function CarDateSelector({ car }: CarDateSelectorProps) {
 
         <div>
           <Label className="text-gray-300 mb-2 block">Alış Lokasyonu *</Label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-3 h-5 w-5 text-orange-500" />
-            <Input
-              required
-              value={pickupLocation}
-              onChange={(e) => setPickupLocation(e.target.value)}
-              className="pl-12 bg-gray-800 border-gray-700 text-white focus:border-orange-500"
-              placeholder="İstanbul Merkez Ofis"
-            />
-          </div>
+          <Select
+            value={selectedLocationId ? String(selectedLocationId) : ''}
+            onValueChange={(value) => {
+              const id = Number(value)
+              const loc = locations.find((l) => l.id === id)
+              if (!loc) return
+              const isCarLoc = car?.location_id ? Number(car.location_id) === loc.id : true
+              if (!isCarLoc) return
+              setSelectedLocationId(id)
+              setPickupLocation(`${loc.name} (${loc.city})`)
+            }}
+          >
+            <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+              <SelectValue placeholder="Lokasyon seçin" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-400 border-gray-700">
+              {locations.map((loc) => {
+                const isCarLoc = car?.location_id ? Number(car.location_id) === loc.id : true
+                return (
+                  <SelectItem key={loc.id} value={String(loc.id)} disabled={!isCarLoc}>
+                    {loc.name} ({loc.city}){!isCarLoc ? ' — uygun değil' : ''}
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Pricing Summary */}
@@ -379,10 +428,10 @@ export function CarDateSelector({ car }: CarDateSelectorProps) {
 
         <Button 
           onClick={handleBookingRedirect}
-          disabled={!startDate || !endDate || !isDateRangeValid}
+          disabled={!startDate || !endDate || !isDateRangeValid || !selectedLocationId}
           className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white h-12 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {!startDate || !endDate ? 'Tarih Seçin' : !isDateRangeValid ? 'Müsait Tarih Seçin' : 'Rezervasyona Devam Et'}
+          {!startDate || !endDate ? 'Tarih Seçin' : !isDateRangeValid ? 'Müsait Tarih Seçin' : !selectedLocationId ? 'Lokasyon Seçin' : 'Rezervasyona Devam Et'}
         </Button>
 
         <div className="text-center text-sm text-gray-400 space-y-1">

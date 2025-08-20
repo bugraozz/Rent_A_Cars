@@ -5,7 +5,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { Search, MoreHorizontal, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -87,8 +87,12 @@ export default function AdminUsersPage() {
         headers: { "Content-Type": "application/json" },
       })
       if (!response.ok) throw new Error("Kullanıcılar yüklenirken bir hata oluştu.")
-      const data = await response.json()
-      setUsers(data)
+      const json = await response.json()
+      if (json.success && Array.isArray(json.data)) {
+        setUsers(json.data)
+      } else {
+        setUsers([])
+      }
       setLoading(false)
     } catch (error) {
       console.error(error)
@@ -117,11 +121,27 @@ export default function AdminUsersPage() {
     }
   }
 
+
   useEffect(() => {
     fetchUsers()
   }, [])
 
-  const filteredUsers = users.filter((user) => {
+  // Sadece müşteri (customer) alanları tam olanları göster
+  const validUsers = users.filter(
+    (user) =>
+      user.first_name &&
+      user.last_name &&
+      user.email &&
+      user.phone !== undefined &&
+      user.date_of_birth !== undefined &&
+      user.city !== undefined &&
+      user.license_number !== undefined &&
+      user.license_issue_date !== undefined &&
+      user.address !== undefined &&
+      user.country !== undefined
+  )
+
+  const filteredUsers = validUsers.filter((user) => {
     const matchesSearch =
       `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||

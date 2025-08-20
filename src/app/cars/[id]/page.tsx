@@ -148,7 +148,7 @@ export default function CarDetailPage() {
             </div>
           </div>
         </div>
-        <RelatedCars />
+  <RelatedCars currentCarId={car?.id} category={car?.category} />
       </div>
       <ModernFooter />
     </div>

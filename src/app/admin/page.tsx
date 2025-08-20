@@ -58,10 +58,14 @@ export default function AdminDashboard() {
     try {
       const response = await axios.get("/api/admin/users");
       console.log("API Response:", response.data); // Debug için
-      return response.data;
+      // Yeni API: { success, data }
+      if (response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
     } catch (error) {
       console.error("Error fetching user data:", error);
-      return null;
+      return [];
     }
   }
 
@@ -118,8 +122,9 @@ export default function AdminDashboard() {
             <a href="/admin/cars" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Araçlar</a>
             <a href="/admin/user" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Kullanıcılar</a>
             <a href="/admin/bookings" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Rezervasyonlar</a>
+            <a href="/admin/locations" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Lokasyonlar</a>
             <a href="/admin/messages" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">İletişim Mesajları</a>
-            <a href="#" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Ayarlar</a>
+            <a href="/admin/settings" className="hover:bg-orange-500 transition-all duration-200 px-4 py-2 rounded-lg">Ayarlar</a>
           </nav>
 
           <div className="absolute bottom-0 w-64 p-4">

@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Eye, Edit, Trash2, Download, Filter, Calendar, Car, User, DollarSign } from 'lucide-react'
+import { Search, Eye,  Download, Filter, Calendar, Car, User, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { AdminGuard } from '@/components/AdminGuard'
@@ -50,13 +49,13 @@ interface Pagination {
 const statusMap = {
   pending: { label: 'Beklemede', color: 'bg-yellow-100 text-yellow-800' },
   confirmed: { label: 'Onaylandı', color: 'bg-blue-100 text-blue-800' },
-  active: { label: 'Aktif', color: 'bg-green-500 text-green-500' },
+  active: { label: 'Aktif', color: 'bg-green-100 text-green-800' },
   completed: { label: 'Tamamlandı', color: 'bg-gray-100 text-gray-800' },
   cancelled: { label: 'İptal', color: 'bg-red-100 text-red-800' },
 }
 
 export default function AdminBookingsPage() {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
