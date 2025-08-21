@@ -87,39 +87,45 @@ export function CarListing({ filters }: CarListingProps) {
       console.log("🔥 Data array uzunluğu:", result.data?.length)
       
       if (result.success && result.data) {
-        console.log("🔥 API başarılı, veri işleniyor...")
-        console.log("🔥 Ham araç verisi:", result.data)
-        
-        // API'den gelen veriyi uygun formata çevir
-        const carsData = result.data.map((car: Car) => {
-          console.log("🔥 İşlenen araç verisi:", {
-            id: car.id,
-            name: car.name,
-            status: car.status,
-            available_from: car.available_from,
-            available_from_type: typeof car.available_from
+        if (Array.isArray(result.data) && result.data.length === 0) {
+          // API başarılı ama hiç araç yoksa dummy araçları göster
+          console.log("🔥 API başarılı ama hiç araç yok, dummy araçlar gösteriliyor.");
+          const dummyCars: Car[] = [
+            // ...dummy araçlar burada aynı şekilde olacak...
+          ];
+          setCars(dummyCars);
+        } else {
+          console.log("🔥 API başarılı, veri işleniyor...")
+          console.log("🔥 Ham araç verisi:", result.data)
+          // API'den gelen veriyi uygun formata çevir
+          const carsData = result.data.map((car: Car) => {
+            console.log("🔥 İşlenen araç verisi:", {
+              id: car.id,
+              name: car.name,
+              status: car.status,
+              available_from: car.available_from,
+              available_from_type: typeof car.available_from
+            })
+            let imagesArr: string[] = [];
+            if (typeof car.images === 'string' && (car.images as string).length > 0) {
+              imagesArr = [car.images as string];
+            } else if (Array.isArray(car.images)) {
+              imagesArr = car.images.map((img: string | { url?: string; image_url?: string }) => {
+                if (typeof img === 'string') return img;
+                if (img && img.url) return img.url;
+                if (img && img.image_url) return img.image_url;
+                return '';
+              }).filter(Boolean);
+            }
+            return {
+              ...car,
+              images: imagesArr,
+            }
           })
-          
-          let imagesArr: string[] = [];
-          if (typeof car.images === 'string' && (car.images as string).length > 0) {
-            imagesArr = [car.images as string];
-          } else if (Array.isArray(car.images)) {
-            imagesArr = car.images.map((img: string | { url?: string; image_url?: string }) => {
-              if (typeof img === 'string') return img;
-              if (img && img.url) return img.url;
-              if (img && img.image_url) return img.image_url;
-              return '';
-            }).filter(Boolean);
-          }
-          return {
-            ...car,
-            images: imagesArr,
-          }
-        })
-        
-        console.log("🔥 İşlenmiş araç listesi:", carsData)
-        console.log("🔥 SetCars çağrılıyor, uzunluk:", carsData.length)
-        setCars(carsData)
+          console.log("🔥 İşlenmiş araç listesi:", carsData)
+          console.log("🔥 SetCars çağrılıyor, uzunluk:", carsData.length)
+          setCars(carsData)
+        }
       } else {
         console.log("🔥 API başarısız veya data yok:", { success: result.success, hasData: !!result.data })
         throw new Error("Geçersiz API yanıtı")
