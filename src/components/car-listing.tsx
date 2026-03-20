@@ -426,30 +426,23 @@ export function CarListing({ filters }: CarListingProps) {
                 <Card className="group overflow-hidden border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 py-0 shadow-[0_18px_55px_-30px_rgba(0,0,0,0.8)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_20px_60px_-25px_rgba(249,115,22,0.25)]">
                   <CardContent className="p-0">
                     <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:gap-6">
-                    <div className="group/image relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-lg shadow-black/20 md:aspect-auto md:h-36 md:w-[210px]">
-                      {/* Gradient Overlay */}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-60 transition-opacity duration-300 group-hover/image:opacity-40" />
-                      
-                      {/* Shine Effect */}
-                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] opacity-0 transition-opacity duration-500 group-hover/image:opacity-100" />
-                      
+                    <div className="group/image relative h-48 w-full flex-shrink-0 overflow-hidden rounded-xl md:h-40 md:w-56">
                       <img
                         src={mainImage}
                         alt={car.name}
-                        className="h-full w-full object-contain p-3 transition-transform duration-500 group-hover/image:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover/image:scale-110"
                         onError={(e) => {
                           ;(e.target as HTMLImageElement).src = "/car-animated.gif"
                         }}
                       />
-                      
-                      {/* Status Badge */}
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       {statusInfo.available ? (
-                        <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm">
+                        <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-semibold text-white">
                           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
                           Musait
                         </div>
                       ) : (
-                        <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-red-500/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm">
+                        <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
                           {statusInfo.label}
                         </div>
                       )}
@@ -479,30 +472,27 @@ export function CarListing({ filters }: CarListingProps) {
                       </div>
 
                       <CollapsibleTrigger asChild>
-                        <Button
-                          variant="link"
-                          className="h-auto p-0 text-orange-400 hover:text-orange-300"
-                        >
-                          Detaylari Gor
-                          <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
-                        </Button>
+                        <button className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-colors hover:text-orange-300">
+                          <span>{isExpanded ? "Detaylari Gizle" : "Detaylari Gor"}</span>
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                        </button>
                       </CollapsibleTrigger>
                     </div>
 
-                    <div className="flex flex-col items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4 md:items-end md:min-w-[180px]">
-                      <div className="text-left md:text-right">
-                        <div className="text-xs uppercase tracking-wider text-gray-400">Gunluk fiyat</div>
-                        <div className="mt-1 flex items-baseline gap-1">
-                          <span className="text-3xl font-bold text-orange-400">{formatPrice(car.daily_price)}</span>
-                          <span className="text-lg text-gray-400">TL</span>
+                    <div className="flex flex-shrink-0 flex-col items-stretch gap-3 md:items-end md:w-44">
+                      <div className="text-center md:text-right">
+                        <span className="text-xs text-gray-500">Gunluk</span>
+                        <div className="flex items-baseline justify-center gap-0.5 md:justify-end">
+                          <span className="text-2xl font-bold text-white">{formatPrice(car.daily_price)}</span>
+                          <span className="text-sm font-medium text-gray-400">TL</span>
                         </div>
                       </div>
                       <Button
-                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20 transition-all hover:from-orange-600 hover:to-red-600 hover:shadow-orange-500/30 md:w-auto md:min-w-[140px]"
+                        className="w-full rounded-lg bg-orange-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400"
                         disabled={!statusInfo.available}
                         onClick={() => handleReserve(car, statusInfo)}
                       >
-                        Rezerve Et
+                        {statusInfo.available ? "Rezerve Et" : "Musait Degil"}
                       </Button>
                     </div>
                     </div>
