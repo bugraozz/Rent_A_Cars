@@ -1,6 +1,6 @@
 import React from "react"
 import { Badge } from "@/components/ui/badge"
-import { Star, Shield, Award, Clock,  Users, CreditCard } from "lucide-react"
+import { Star, Shield, Award, Clock, Users, CreditCard, Gauge, Fuel, CalendarRange } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Car as CarType } from "@/types/car"
 
@@ -102,52 +102,93 @@ export function CarDetail({ car }: CarDetailProps) {
       value: (car || currentCar).requires_deposit ? "Gerekli" : "Gerekli Değil"
     }
   ]
+
+  const rating = currentCar.rating || 5.0
+  const reviewCount = currentCar.review_count || 24
+  const quickFacts = [
+    {
+      icon: CalendarRange,
+      label: "Model",
+      value: `${currentCar.year}`,
+    },
+    {
+      icon: Fuel,
+      label: "Yakit",
+      value: currentCar.fuel_type,
+    },
+    {
+      icon: Gauge,
+      label: "Sanziman",
+      value: currentCar.transmission,
+    },
+  ]
+
   return (
     <div className="space-y-8">
-      <div>
-        <div className="flex items-center space-x-4 mb-4">
-          <Badge className={`${getStatusColor((car || currentCar).status)} text-white border-0`}>
-            {getStatusLabel((car || currentCar).status)}
+      <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-6 md:p-9 shadow-[0_28px_90px_-40px_rgba(0,0,0,0.85)]">
+        <div className="mb-5 flex flex-wrap items-center gap-4">
+          <Badge className={`${getStatusColor(currentCar.status)} text-white border-0`}>
+            {getStatusLabel(currentCar.status)}
           </Badge>
           <div className="flex items-center space-x-2">
             <Star className="h-5 w-5 fill-orange-500 text-orange-500" />
-            <span className="text-white font-medium">{(car || currentCar).rating || 5.0}</span>
-            <span className="text-gray-400">({(car || currentCar).review_count || 24} değerlendirme)</span>
+            <span className="text-white font-medium">{rating.toFixed(1)}</span>
+            <span className="text-gray-400">({reviewCount} degerlendirme)</span>
           </div>
+          <Badge variant="outline" className="border-blue-300/60 bg-blue-500/10 text-blue-100">
+            {currentCar.brand} {currentCar.model}
+          </Badge>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-black text-white mb-4">{(car || currentCar).name}</h1>
+        <h1 className="mb-3 text-3xl font-black tracking-tight text-white md:text-5xl">{currentCar.name}</h1>
+        <p className="mb-6 text-sm uppercase tracking-[0.22em] text-gray-400">
+          {currentCar.category} • {currentCar.color}
+        </p>
         
-        <div className="flex items-center gap-6 mb-6">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-400">{formatPrice((car || currentCar).daily_price)}</div>
-            <div className="text-gray-400">/ günlük</div>
+        <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4">
+            <div className="mb-1 text-sm text-blue-200/80">Gunluk ucret</div>
+            <div className="text-2xl md:text-3xl font-bold text-blue-300">{formatPrice(currentCar.daily_price)}</div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white">{formatPrice((car || currentCar).price)}</div>
-            <div className="text-gray-400">toplam fiyat</div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="mb-1 text-sm text-gray-400">Liste fiyati</div>
+            <div className="text-2xl md:text-3xl font-bold text-white">{formatPrice(currentCar.price)}</div>
           </div>
         </div>
 
-        <p className="text-xl text-gray-300 leading-relaxed">
-          {(car || currentCar).description}
+        <div className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {quickFacts.map((fact, index) => (
+            <div key={index} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-red-500">
+                <fact.icon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-gray-400">{fact.label}</div>
+                <div className="text-sm font-semibold text-white">{fact.value}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="max-w-4xl text-base leading-relaxed text-gray-200/95 md:text-lg">
+          {currentCar.description}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-900/50 rounded-2xl p-6 text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-sm">
           <Shield className="h-8 w-8 text-orange-500 mx-auto mb-4" />
           <h3 className="font-semibold text-white mb-2">Tam Sigorta</h3>
           <p className="text-gray-400 text-sm">Kapsamlı sigorta dahil</p>
         </div>
 
-        <div className="bg-gray-900/50 rounded-2xl p-6 text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-sm">
           <Award className="h-8 w-8 text-orange-500 mx-auto mb-4" />
           <h3 className="font-semibold text-white mb-2">Premium Hizmet</h3>
           <p className="text-gray-400 text-sm">VIP müşteri deneyimi</p>
         </div>
 
-        <div className="bg-gray-900/50 rounded-2xl p-6 text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-sm">
           <Clock className="h-8 w-8 text-orange-500 mx-auto mb-4" />
           <h3 className="font-semibold text-white mb-2">7/24 Destek</h3>
           <p className="text-gray-400 text-sm">Kesintisiz müşteri desteği</p>
@@ -156,14 +197,14 @@ export function CarDetail({ car }: CarDetailProps) {
 
        
 
-       <Card className="bg-gray-900/50 border-gray-800">
+       <Card className="border-white/10 bg-gradient-to-b from-slate-900 to-slate-950">
       <CardHeader>
-        <CardTitle className="text-white text-2xl">Kiralama koşulları</CardTitle>
+        <CardTitle className="text-white text-2xl">Kiralama kosullari</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {specs.map((spec, index) => (
-            <div key={index} className="flex items-center space-x-4 p-4 bg-gray-800/50 rounded-xl">
+            <div key={index} className="flex items-center space-x-4 p-4 rounded-xl border border-white/10 bg-white/5">
               <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
                 <spec.icon className="h-6 w-6 text-white" />
               </div>

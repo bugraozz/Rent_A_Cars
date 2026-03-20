@@ -2,14 +2,12 @@
 
 "use client"
 type FeaturedCar = Partial<Car> & { featured?: boolean; specs?: string[] };
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Zap, Gauge, Users, Star, Loader2 } from "lucide-react"
-import Image from "next/image"
+import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Car } from "@/types/car"
+import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards"
 
 export function CarShowcase() {
   const [featuredCars, setFeaturedCars] = useState<Car[]>([])
@@ -112,6 +110,67 @@ export function CarShowcase() {
     }).format(price)
   }
 
+  const formatISODate = (date: Date) => {
+    return date.toISOString().split("T")[0]
+  }
+
+  const createBookingHref = (car: FeaturedCar) => {
+    const carId = car.id ?? 0
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(now.getDate() + 1)
+    const dayAfterTomorrow = new Date(now)
+    dayAfterTomorrow.setDate(now.getDate() + 2)
+
+    const startDate = formatISODate(tomorrow)
+    const endDate = formatISODate(dayAfterTomorrow)
+    const rentalDays = 1
+
+    const dailyPrice = car.daily_price ?? 0
+    const subtotal = dailyPrice * rentalDays
+    const tax = subtotal * 0.2
+    const total = subtotal + tax
+
+    const params = new URLSearchParams({
+      carId: String(carId),
+      startDate,
+      endDate,
+      rentalDays: String(rentalDays),
+      subtotal: String(subtotal),
+      tax: String(tax),
+      total: String(total),
+    })
+
+    return `/booking?${params.toString()}`
+  }
+
+  const movingItems = useMemo(() => {
+    return (featuredCars as FeaturedCar[]).map((car) => {
+      const name = car.name ?? `${car.brand ?? "Araç"} ${car.model ?? ""}`.trim()
+      const specs = car.specs ?? [
+        `${car.engine_power || "400"} HP`,
+        `${car.max_speed || "250"} km/h`,
+        `${car.seating_capacity || "4"} Kişi`,
+      ]
+      const mainImage = Array.isArray(car.images) && car.images.length > 0
+        ? car.images[0]
+        : "/car-animated.gif"
+
+      return {
+        quote: car.description || `${name} premium sürüş deneyimi sunar.`,
+        name,
+        title: `${car.brand ?? ""} ${car.model ?? ""} ${car.year ?? ""}`.trim(),
+        image: typeof mainImage === "string" ? mainImage : "/car-animated.gif",
+        price: `₺${formatPrice(car.daily_price ?? 0)}`,
+        category: car.category ?? "Premium",
+        rating: `${car.rating ?? 4.8}`,
+        specs,
+        ctaHref: createBookingHref(car),
+        ctaLabel: "Rezerve Et",
+      }
+    })
+  }, [featuredCars])
+
   if (loading) {
     return (
       <section className="py-20 bg-gradient-to-b from-transparent to-blue-950">
@@ -136,14 +195,17 @@ export function CarShowcase() {
   }
 
   return (
-    <section className="py-20 bg-gradient-to-b from-transparent to-blue-950">
+    <section className="relative overflow-hidden py-20 bg-[radial-gradient(80%_120%_at_10%_0%,rgba(249,115,22,0.16),transparent_55%),radial-gradient(70%_110%_at_100%_20%,rgba(59,130,246,0.14),transparent_60%),linear-gradient(to_bottom,#020617,#030712)]">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-white mb-6">
-            En Çok Kiralanan <span className="text-orange-500">Araçlar</span>
+        <div className="mb-14 flex flex-col gap-4 text-center">
+          <p className="mx-auto w-fit rounded-full border border-orange-400/30 bg-orange-500/10 px-4 py-1 text-xs uppercase tracking-[0.22em] text-orange-200">
+            Sezonun Favorileri
+          </p>
+          <h2 className="text-4xl font-black tracking-tight text-white md:text-5xl">
+            En Çok Kiralanan <span className="text-orange-400">Araçlar</span>
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Müşterilerimizin en çok tercih ettiği premium araçlar
+          <p className="mx-auto max-w-2xl text-lg text-gray-300">
+            Müşterilerimizin en çok tercih ettiği premium araçları, anında rezervasyon akışıyla keşfedin.
           </p>
         </div>
 
@@ -153,102 +215,12 @@ export function CarShowcase() {
             <p className="text-gray-400 mt-2">Lütfen daha sonra tekrar kontrol edin.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            {(featuredCars as FeaturedCar[]).map((car, index) => {
-              const isValidImage = (src: unknown) => {
-                if (typeof src !== "string" || !src) return false;
-                const allowed = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-                return allowed.some(ext => src.toLowerCase().endsWith(ext));
-              };
-              const validImages = Array.isArray(car.images)
-                ? car.images.filter(isValidImage)
-                : [];
-              const mainImage = validImages.length > 0 ? validImages[0] : "/car-animated.gif";
-
-              // Fallbacks for possibly undefined properties
-              const name = car.name ?? "";
-              const featured = car.featured ?? false;
-              const specs = car.specs ?? [];
-              const dailyPrice = car.daily_price ?? 0;
-              const category = car.category ?? "";
-              const rating = car.rating ?? 4.5;
-              const id = car.id ?? index;
-
-              return (
-                <Card
-                  key={id}
-                  className={`bg-gray-800/50 border-gray-700 overflow-hidden hover:bg-gray-800/70 transition-all duration-500 group ${
-                    index === 0 ? "lg:col-span-2 lg:row-span-2" : ""
-                  }`}
-                >
-                  <div className="relative overflow-hidden">
-                    <Image
-                      src={mainImage}
-                      alt={name}
-                      width={600}
-                      height={400}
-                      className={`w-full object-cover group-hover:scale-110 transition-transform duration-700 ${
-                        index === 0 ? "h-80" : "h-64"
-                      }`}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-
-                    {featured && (
-                      <Badge className="absolute top-4 left-4 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                        En Popüler
-                      </Badge>
-                    )}
-
-                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-full p-2">
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
-                        <span className="text-white text-sm font-medium">{rating}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className={`font-bold text-white mb-2 ${index === 0 ? "text-2xl" : "text-xl"}`}>
-                          {name}
-                        </h3>
-                        <Badge variant="outline" className="border-orange-500 text-orange-500">
-                          {category}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      {specs && specs.map((spec: string, specIndex: number) => (
-                        <div key={specIndex} className="text-center">
-                          <div className="flex justify-center mb-2">
-                            {specIndex === 0 && <Zap className="h-5 w-5 text-orange-500" />}
-                            {specIndex === 1 && <Gauge className="h-5 w-5 text-orange-500" />}
-                            {specIndex === 2 && <Users className="h-5 w-5 text-orange-500" />}
-                          </div>
-                          <div className="text-white text-sm font-medium">{spec}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="text-3xl font-bold text-orange-500">₺{formatPrice(dailyPrice)}</span>
-                        <span className="text-gray-400 ml-1">/gün</span>
-                      </div>
-                      <Link href={`/cars/${id}`}>
-                        <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0">
-                          Rezerve Et
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <InfiniteMovingCards
+            items={movingItems}
+            direction="left"
+            speed="normal"
+            className="max-w-none"
+          />
         )}
 
         <div className="text-center mt-12">

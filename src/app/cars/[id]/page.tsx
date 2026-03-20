@@ -101,7 +101,7 @@ export default function CarDetailPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <ModernHeader />
-      <div className="pt-20">
+      <div className="pt-20 bg-[radial-gradient(70%_90%_at_0%_10%,rgba(249,115,22,0.12),transparent_55%),radial-gradient(80%_100%_at_100%_0%,rgba(59,130,246,0.12),transparent_60%)]">
         {/* Dinamik galeri */}
         {car ? (
           <CarGallery images={car.images || []} />
@@ -109,8 +109,8 @@ export default function CarDetailPage() {
           <CarGallery images={[]} />
         )}
         
-        <div className="container mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="container mx-auto px-4 py-12 md:px-6 md:py-16">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-12">
             <div className="lg:col-span-2">
               <CarDetail car={car || undefined} />
               <div className="mt-8">
@@ -118,15 +118,17 @@ export default function CarDetailPage() {
               </div>
             </div>
             <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24">
               {car ? (
                 <CarBookingCard car={car} />
               ) : (
                 <CarBooking />
               )}
+              </div>
             </div>
           </div>
         </div>
-  <RelatedCars currentCarId={car?.id} category={car?.category} />
+        <RelatedCars currentCarId={car?.id} category={car?.category} />
       </div>
       <ModernFooter />
     </div>

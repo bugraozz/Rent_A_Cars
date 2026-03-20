@@ -1,13 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {  Star, Zap, Gauge, Users, Eye, Loader2 } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+import { CalendarDays, CheckCircle2, ChevronDown, Gauge, Loader2, Shield, Sparkles, Users, Zap } from "lucide-react"
 import { toast } from "sonner"
 import { Car } from "@/types/car"
 
@@ -22,6 +27,7 @@ interface CarListingProps {
 }
 
 export function CarListing({ filters }: CarListingProps) {
+  const router = useRouter()
   // DEBUG: fetchCars otomatik çağrılıyor mu?
   useEffect(() => {
     console.log("[DEBUG] useEffect: fetchCars çağrılıyor!");
@@ -32,6 +38,7 @@ export function CarListing({ filters }: CarListingProps) {
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState<string>("")
+  const [expandedCarId, setExpandedCarId] = useState<number | null>(null)
 
   // Cars ve filteredCars state değişikliklerini izle
   useEffect(() => {
@@ -218,6 +225,33 @@ export function CarListing({ filters }: CarListingProps) {
     }).format(price)
   }
 
+  const getMainImage = (car: Car) => {
+    let mainImage = "/car-animated.gif"
+
+    if (Array.isArray(car.images) && car.images.length > 0) {
+      const img = car.images[0] as unknown
+      if (typeof img === "string") {
+        mainImage = img
+      } else if (img && typeof img === "object" && "url" in img && typeof (img as { url?: string }).url === "string") {
+        mainImage = (img as { url?: string }).url as string
+      } else if (img && typeof img === "object" && "image_url" in img && typeof (img as { image_url?: string }).image_url === "string") {
+        mainImage = (img as { image_url?: string }).image_url as string
+      }
+    } else if (typeof car.images === "string" && (car.images as string).length > 0) {
+      mainImage = car.images as string
+    }
+
+    if (typeof mainImage === "string" && mainImage.startsWith("uploads/")) {
+      mainImage = "/" + mainImage
+    }
+
+    if (!mainImage || typeof mainImage !== "string" || mainImage.trim() === "") {
+      mainImage = "/car-animated.gif"
+    }
+
+    return mainImage
+  }
+
   const getStatusBadge = (status: string, availableFrom?: string) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0) // Bugünün başlangıcına ayarla
@@ -261,6 +295,69 @@ export function CarListing({ filters }: CarListingProps) {
       default:
         return { label: "Müsait Değil", available: false, availableDate: null, showAvailabilityDate: false }
     }
+  }
+
+  const formatISODate = (date: Date) => {
+    return date.toISOString().split("T")[0]
+  }
+
+  const handleReserve = (car: Car, statusInfo: ReturnType<typeof getStatusBadge>) => {
+    console.log('🔥 Car button clicked:', { car: car.id, status: car.status })
+
+    if (car.status === 'busy') {
+      toast.info('Bu araç şu anda meşgul')
+      return
+    }
+    if (car.status === 'maintenance') {
+      toast.info('Bu araç bakımda')
+      return
+    }
+    if (car.status === 'reserved') {
+      const availableDate = car.available_from ? new Date(car.available_from).toLocaleDateString('tr-TR') : 'belirtilmemiş'
+      toast.info(`Bu araç şu anda rezerve edilmiş. ${availableDate} tarihinde müsait olacak.`)
+      return
+    }
+
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(now.getDate() + 1)
+    const dayAfterTomorrow = new Date(now)
+    dayAfterTomorrow.setDate(now.getDate() + 2)
+
+    const startDate = filters?.startDate || formatISODate(tomorrow)
+    const endDate = filters?.endDate || formatISODate(dayAfterTomorrow)
+
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const diffDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
+
+    const subtotal = car.daily_price * diffDays
+    const tax = subtotal * 0.2
+    const total = subtotal + tax
+
+    const params = new URLSearchParams({
+      carId: String(car.id),
+      startDate,
+      endDate,
+      rentalDays: String(diffDays),
+      subtotal: String(subtotal),
+      tax: String(tax),
+      total: String(total),
+    })
+
+    if (filters?.location) {
+      params.set("pickupLocation", filters.location)
+    }
+    if (filters?.locationIds && filters.locationIds.length > 0) {
+      params.set("pickupLocationId", String(filters.locationIds[0]))
+    }
+
+    if (!statusInfo.available) {
+      toast.info('Araç şu an müsait değil')
+      return
+    }
+
+    router.push(`/booking?${params.toString()}`)
   }
 
   if (loading) {
@@ -314,199 +411,152 @@ export function CarListing({ filters }: CarListingProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 ">
+        <div className="space-y-4">
           {filteredCars.map((car) => {
             const statusInfo = getStatusBadge(car.status, car.available_from)
-            // isValidImage kullanılmıyor, kaldırıldı
-            // validImages kullanılmıyor, kaldırıldı
-            // Detay sayfasındaki gibi: images array ise ilk eleman, string ise direkt kullan
-            let mainImage = "/car-animated.gif";
-            if (Array.isArray(car.images) && car.images.length > 0) {
-              const img = car.images[0] as unknown;
-              if (typeof img === "string") {
-                mainImage = img;
-              } else if (img && typeof img === 'object' && 'url' in img && typeof (img as { url?: string }).url === "string") {
-                mainImage = (img as { url?: string }).url as string;
-              } else if (img && typeof img === 'object' && 'image_url' in img && typeof (img as { image_url?: string }).image_url === "string") {
-                mainImage = (img as { image_url?: string }).image_url as string;
-              }
-            } else if (typeof car.images === "string" && (car.images as string).length > 0) {
-              mainImage = car.images as string;
-            }
-            // Geçerli uzantı değilse fallback
-            // uploads ile başlıyorsa başına / ekle
-            if (typeof mainImage === "string" && mainImage.startsWith("uploads/")) {
-              mainImage = "/" + mainImage;
-            }
-            // Uzantı kontrolü kaldırıldı, sadece boş veya null ise fallback
-            if (!mainImage || typeof mainImage !== "string" || mainImage.trim() === "") {
-              mainImage = "/car-animated.gif";
-            }
-            // Log: Görsel yolları ve fallback nedeni
-            console.log('[GÖRSEL] Araç:', car.name, '| images:', car.images, '| mainImage:', mainImage);
-            if(mainImage === "/car-animated.gif") {
-              console.warn('[GÖRSEL] Fallback görsel kullanıldı:', car.name, car.images);
-            }
-            // Next.js Image için width/height zorunlu
-            const imageWidth = 500;
-            const imageHeight = 300;
+            const mainImage = getMainImage(car)
+            const isExpanded = expandedCarId === car.id
 
             return (
-              <Card
+              <Collapsible
                 key={car.id}
-                className="bg-gray-900/50 border-gray-800 overflow-hidden hover:bg-gray-800/70 transition-all duration-300 group"
+                open={isExpanded}
+                onOpenChange={(open) => setExpandedCarId(open ? car.id : null)}
               >
-                <div className="relative">
-                  <Image
-                    src={mainImage}
-                    alt={car.name}
-                    width={imageWidth}
-                    height={imageHeight}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/car-animated.gif"; }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-
-                  {car.status === "available" && car.daily_price > 2000 && (
-                    <Badge className="absolute top-4 left-4 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                      Premium
-                    </Badge>
-                  )}
-
-                  {(!statusInfo.available || car.status === 'maintenance' || car.status === 'busy' || car.status === 'reserved') && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                      <div className="text-center">
-                        <Badge variant="destructive" className="text-lg px-4 py-2 mb-2">
-                          {statusInfo.label}
-                        </Badge>
-                        {statusInfo.showAvailabilityDate && statusInfo.availableDate && (
-                          <p className="text-white text-sm">
-                            Müsait olacağı tarih: {statusInfo.availableDate.toLocaleDateString('tr-TR')}
-                          </p>
-                        )}
-                        {car.status === 'maintenance' && (
-                          <p className="text-white text-sm">
-                            Bu araç bakımdadır
-                          </p>
-                        )}
-                        {car.status === 'busy' && (
-                          <p className="text-white text-sm">
-                            Bu araç şu anda meşguldür
-                          </p>
-                        )}
-                        {car.status === 'reserved' && (
-                          <p className="text-white text-sm">
-                            Bu araç rezerve edilmiştir
-                          </p>
-                        )}
-                      </div>
+                <Card className="overflow-hidden border-white/10 bg-black/40 py-0 shadow-[0_18px_55px_-30px_rgba(0,0,0,0.8)]">
+                  <CardContent className="p-0">
+                    <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-[210px_1fr_180px] md:items-center md:gap-6">
+                    <div className="relative h-36 overflow-hidden rounded-xl border border-white/10 bg-black md:h-32">
+                      <img
+                        src={mainImage}
+                        alt={car.name}
+                        className="h-full w-full object-contain p-2"
+                        onError={(e) => {
+                          ;(e.target as HTMLImageElement).src = "/car-animated.gif"
+                        }}
+                      />
                     </div>
-                  )}
 
-                  
-
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
-                        <span className="text-white font-medium">{car.rating || 4.5}</span>
-                        <span className="text-gray-300 text-sm">({car.review_count || 0})</span>
-                      </div>
-                      <Badge variant="outline" className="border-orange-500 text-orange-500 bg-black/50">
-                        {car.category}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-xl text-white mb-4">{car.name}</h3>
-
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-3 bg-gray-800/50 rounded-lg">
-                      <div className="flex justify-center mb-2">
-                        <Zap className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div className="text-white text-sm font-medium">{car.year}</div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-800/50 rounded-lg">
-                      <div className="flex justify-center mb-2">
-                        <Gauge className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div className="text-white text-sm font-medium">{car.fuel_type}</div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-800/50 rounded-lg">
-                      <div className="flex justify-center mb-2">
-                        <Users className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div className="text-white text-sm font-medium">{car.transmission}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center mb-6">
                     <div>
-                      <span className="text-3xl font-bold text-orange-500">₺{formatPrice(car.daily_price)}</span>
-                      <span className="text-gray-400 ml-1">/gün</span>
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <h3 className="text-2xl font-bold text-white">{car.name}</h3>
+                        <Badge variant="outline" className="border-orange-400/70 text-orange-300">
+                          {car.category}
+                        </Badge>
+                      </div>
+
+                      <div className="mb-3 flex flex-wrap gap-4 text-sm text-gray-300">
+                        <span className="inline-flex items-center gap-1"><Users className="h-4 w-4" /> {car.seating_capacity || "4"}</span>
+                        <span className="inline-flex items-center gap-1"><Gauge className="h-4 w-4" /> {car.transmission}</span>
+                        <span className="inline-flex items-center gap-1"><Zap className="h-4 w-4" /> {car.fuel_type}</span>
+                        <span className="inline-flex items-center gap-1"><Shield className="h-4 w-4" /> Temel koruma</span>
+                      </div>
+
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 text-orange-300 hover:text-orange-200"
+                        >
+                          More details
+                          <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                        </Button>
+                      </CollapsibleTrigger>
                     </div>
-                    <div className="text-right">
-                      {/* Sadece gelecekte müsait olacak araçlar için tarih göster */}
-                      {statusInfo.showAvailabilityDate && statusInfo.availableDate && (
-                        <div>
-                          <div className="text-sm text-gray-400">Müsait olacağı tarih:</div>
-                          <div className="text-orange-500 font-medium">
-                            {statusInfo.availableDate.toLocaleDateString('tr-TR')}
+
+                    <div className="text-left md:text-right">
+                      <div className="text-xs uppercase tracking-wide text-gray-400">Günlük fiyat</div>
+                      <div className="text-3xl font-bold text-white">₺{formatPrice(car.daily_price)} <span className="text-2xl font-medium text-gray-300">/ gün</span></div>
+                      <div className="mt-1 text-sm text-gray-400">Toplam ₺{formatPrice(car.price || car.daily_price)}</div>
+                      <Button
+                        className="mt-4 w-full bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 md:w-auto md:min-w-[140px]"
+                        disabled={!statusInfo.available}
+                        onClick={() => handleReserve(car, statusInfo)}
+                      >
+                        Rezerve Et
+                      </Button>
+                    </div>
+                    </div>
+
+                    <CollapsibleContent className="overflow-hidden transition-all duration-300 ease-out data-[state=closed]:max-h-0 data-[state=closed]:opacity-0 data-[state=open]:max-h-[820px] data-[state=open]:opacity-100">
+                      <Separator className="bg-white/10" />
+                      <div className="grid grid-cols-1 gap-5 bg-gradient-to-b from-slate-950/80 to-black/40 p-4 md:grid-cols-3 md:gap-6 md:p-6">
+                        <div
+                          className={`rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2 transition-all duration-500 ${
+                            isExpanded ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                          }`}
+                          style={{ transitionDelay: isExpanded ? "40ms" : "0ms" }}
+                        >
+                          <div className="mb-3 flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-orange-300" />
+                            <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-200">Araç Hakkında</h4>
+                          </div>
+                          <p className="text-sm leading-7 text-gray-300">
+                            {car.description || `${car.brand} ${car.model} konfor, güvenlik ve performansı bir arada sunar.`}
+                          </p>
+
+                          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            <div
+                              className={`rounded-xl border border-white/10 bg-black/35 p-3 text-center transition-all duration-500 ${
+                                isExpanded ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                              }`}
+                              style={{ transitionDelay: isExpanded ? "110ms" : "0ms" }}
+                            >
+                              <div className="text-xs uppercase tracking-wide text-gray-400">Model</div>
+                              <div className="mt-1 text-sm font-semibold text-white">{car.year}</div>
+                            </div>
+                            <div
+                              className={`rounded-xl border border-white/10 bg-black/35 p-3 text-center transition-all duration-500 ${
+                                isExpanded ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                              }`}
+                              style={{ transitionDelay: isExpanded ? "160ms" : "0ms" }}
+                            >
+                              <div className="text-xs uppercase tracking-wide text-gray-400">Yakıt</div>
+                              <div className="mt-1 text-sm font-semibold text-white">{car.fuel_type}</div>
+                            </div>
+                            <div
+                              className={`rounded-xl border border-white/10 bg-black/35 p-3 text-center transition-all duration-500 ${
+                                isExpanded ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                              }`}
+                              style={{ transitionDelay: isExpanded ? "210ms" : "0ms" }}
+                            >
+                              <div className="text-xs uppercase tracking-wide text-gray-400">Şanzıman</div>
+                              <div className="mt-1 text-sm font-semibold text-white">{car.transmission}</div>
+                            </div>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="flex space-x-3">
-                    <Link href={{ pathname: `/cars/${car.id}`, query: (filters?.locationIds && filters.locationIds.length > 0) ? { locations: filters.locationIds.join(',') } : undefined }} className="flex-1">
-                      <Button
-                        variant="outline"
-                        className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black bg-transparent"
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Detaylar
-                      </Button>
-                    </Link>
-                    <div className="flex-1">
-                      <Button
-                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!statusInfo.available}
-                        onClick={() => {
-                          console.log('🔥 Car button clicked:', { car: car.id, status: car.status })
-                          if (car.status === 'busy') {
-                            toast.info('Bu araç şu anda meşgul')
-                            return
-                          }
-                          if (car.status === 'maintenance') {
-                            toast.info('Bu araç bakımda')
-                            return
-                          }
-                          if (car.status === 'reserved') {
-                            const availableDate = car.available_from ? new Date(car.available_from).toLocaleDateString('tr-TR') : 'belirtilmemiş'
-                            toast.info(`Bu araç şu anda rezerve edilmiş. ${availableDate} tarihinde müsait olacak.`)
-                            return
-                          }
-                          // Car detail sayfasına yönlendir (tarih seçimi için)
-                          console.log('🔥 Redirecting to car detail:', `/cars/${car.id}`)
-                          window.location.href = `/cars/${car.id}`
-                        }}
-                      >
-                        {car.status === 'busy' 
-                          ? "Meşgul" 
-                          : car.status === 'maintenance' 
-                          ? "Bakımda" 
-                          : car.status === 'reserved'
-                          ? "Şu anda rezerve"
-                          : "Rezerve Et"}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                        <div
+                          className={`rounded-2xl border border-white/10 bg-white/5 p-4 transition-all duration-500 ${
+                            isExpanded ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                          }`}
+                          style={{ transitionDelay: isExpanded ? "90ms" : "0ms" }}
+                        >
+                          <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-200">Kiralama Bilgisi</h4>
+                          <ul className="space-y-2 text-sm text-gray-300">
+                            <li className={`flex items-center justify-between transition-all duration-500 ${isExpanded ? "translate-x-0 opacity-100" : "translate-x-1 opacity-0"}`} style={{ transitionDelay: isExpanded ? "130ms" : "0ms" }}><span>Min. yaş</span><span className="text-white">{car.min_driver_age}</span></li>
+                            <li className={`flex items-center justify-between transition-all duration-500 ${isExpanded ? "translate-x-0 opacity-100" : "translate-x-1 opacity-0"}`} style={{ transitionDelay: isExpanded ? "160ms" : "0ms" }}><span>Ehliyet yılı</span><span className="text-white">{car.min_license_years}</span></li>
+                            <li className={`flex items-center justify-between transition-all duration-500 ${isExpanded ? "translate-x-0 opacity-100" : "translate-x-1 opacity-0"}`} style={{ transitionDelay: isExpanded ? "190ms" : "0ms" }}><span>Kredi kartı</span><span className="text-white">{car.requires_credit_card ? "Gerekli" : "Opsiyonel"}</span></li>
+                            <li className={`flex items-center justify-between transition-all duration-500 ${isExpanded ? "translate-x-0 opacity-100" : "translate-x-1 opacity-0"}`} style={{ transitionDelay: isExpanded ? "220ms" : "0ms" }}><span>Depozito</span><span className="text-white">{car.requires_deposit ? "Gerekli" : "Yok"}</span></li>
+                            <li className={`flex items-center justify-between transition-all duration-500 ${isExpanded ? "translate-x-0 opacity-100" : "translate-x-1 opacity-0"}`} style={{ transitionDelay: isExpanded ? "250ms" : "0ms" }}><span>Müsaitlik</span><span className="inline-flex items-center gap-1 text-white"><CalendarDays className="h-4 w-4" /> {statusInfo.label}</span></li>
+                          </ul>
+
+                          <div
+                            className={`mt-4 rounded-xl border border-green-400/25 bg-green-500/10 p-3 text-xs text-green-200 transition-all duration-500 ${
+                              isExpanded ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                            }`}
+                            style={{ transitionDelay: isExpanded ? "280ms" : "0ms" }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Ücretsiz iptal ve temel koruma dahil
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </CardContent>
+                </Card>
+              </Collapsible>
             )
           })}
         </div>
