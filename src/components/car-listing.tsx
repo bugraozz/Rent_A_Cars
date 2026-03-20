@@ -423,52 +423,82 @@ export function CarListing({ filters }: CarListingProps) {
                 open={isExpanded}
                 onOpenChange={(open) => setExpandedCarId(open ? car.id : null)}
               >
-                <Card className="overflow-hidden border-white/10 bg-black/40 py-0 shadow-[0_18px_55px_-30px_rgba(0,0,0,0.8)]">
+                <Card className="group overflow-hidden border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 py-0 shadow-[0_18px_55px_-30px_rgba(0,0,0,0.8)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_20px_60px_-25px_rgba(249,115,22,0.25)]">
                   <CardContent className="p-0">
-                    <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-[210px_1fr_180px] md:items-center md:gap-6">
-                    <div className="relative h-36 overflow-hidden rounded-xl border border-white/10 bg-black md:h-32">
+                    <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:gap-6">
+                    <div className="group/image relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-lg shadow-black/20 md:aspect-auto md:h-36 md:w-[210px]">
+                      {/* Gradient Overlay */}
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-60 transition-opacity duration-300 group-hover/image:opacity-40" />
+                      
+                      {/* Shine Effect */}
+                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] opacity-0 transition-opacity duration-500 group-hover/image:opacity-100" />
+                      
                       <img
                         src={mainImage}
                         alt={car.name}
-                        className="h-full w-full object-contain p-2"
+                        className="h-full w-full object-contain p-3 transition-transform duration-500 group-hover/image:scale-105"
                         onError={(e) => {
                           ;(e.target as HTMLImageElement).src = "/car-animated.gif"
                         }}
                       />
+                      
+                      {/* Status Badge */}
+                      {statusInfo.available ? (
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                          Musait
+                        </div>
+                      ) : (
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-red-500/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm">
+                          {statusInfo.label}
+                        </div>
+                      )}
                     </div>
 
-                    <div>
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <h3 className="text-2xl font-bold text-white">{car.name}</h3>
-                        <Badge variant="outline" className="border-orange-400/70 text-orange-300">
+                    <div className="flex-1 min-w-0">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <h3 className="text-xl font-bold text-white md:text-2xl">{car.name}</h3>
+                        <Badge variant="outline" className="border-orange-400/50 bg-orange-500/10 text-orange-300">
                           {car.category}
                         </Badge>
                       </div>
 
-                      <div className="mb-3 flex flex-wrap gap-4 text-sm text-gray-300">
-                        <span className="inline-flex items-center gap-1"><Users className="h-4 w-4" /> {car.seating_capacity || "4"}</span>
-                        <span className="inline-flex items-center gap-1"><Gauge className="h-4 w-4" /> {car.transmission}</span>
-                        <span className="inline-flex items-center gap-1"><Zap className="h-4 w-4" /> {car.fuel_type}</span>
-                        <span className="inline-flex items-center gap-1"><Shield className="h-4 w-4" /> Temel koruma</span>
+                      <div className="mb-4 flex flex-wrap gap-3 text-sm">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-gray-300">
+                          <Users className="h-4 w-4 text-orange-400" /> {car.seating_capacity || "4"} Kisi
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-gray-300">
+                          <Gauge className="h-4 w-4 text-orange-400" /> {car.transmission}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-gray-300">
+                          <Zap className="h-4 w-4 text-orange-400" /> {car.fuel_type}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-gray-300">
+                          <Shield className="h-4 w-4 text-emerald-400" /> Temel koruma
+                        </span>
                       </div>
 
                       <CollapsibleTrigger asChild>
                         <Button
                           variant="link"
-                          className="h-auto p-0 text-orange-300 hover:text-orange-200"
+                          className="h-auto p-0 text-orange-400 hover:text-orange-300"
                         >
-                          More details
+                          Detaylari Gor
                           <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
                         </Button>
                       </CollapsibleTrigger>
                     </div>
 
-                    <div className="text-left md:text-right">
-                      <div className="text-xs uppercase tracking-wide text-gray-400">Günlük fiyat</div>
-                      <div className="text-3xl font-bold text-white">₺{formatPrice(car.daily_price)} <span className="text-2xl font-medium text-gray-300">/ gün</span></div>
-                      <div className="mt-1 text-sm text-gray-400">Toplam ₺{formatPrice(car.price || car.daily_price)}</div>
+                    <div className="flex flex-col items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4 md:items-end md:min-w-[180px]">
+                      <div className="text-left md:text-right">
+                        <div className="text-xs uppercase tracking-wider text-gray-400">Gunluk fiyat</div>
+                        <div className="mt-1 flex items-baseline gap-1">
+                          <span className="text-3xl font-bold text-orange-400">{formatPrice(car.daily_price)}</span>
+                          <span className="text-lg text-gray-400">TL</span>
+                        </div>
+                      </div>
                       <Button
-                        className="mt-4 w-full bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 md:w-auto md:min-w-[140px]"
+                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20 transition-all hover:from-orange-600 hover:to-red-600 hover:shadow-orange-500/30 md:w-auto md:min-w-[140px]"
                         disabled={!statusInfo.available}
                         onClick={() => handleReserve(car, statusInfo)}
                       >
